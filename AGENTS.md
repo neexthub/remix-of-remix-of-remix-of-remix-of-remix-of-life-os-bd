@@ -7,24 +7,47 @@
 >
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
-
-## What Lovable manages
-
-Rules outside this block are the project's own. Change the pieces below in
-Lovable, not by hand. With the [Lovable MCP](https://mcp.lovable.dev)
-connected, `send_message` asks Lovable to do it; otherwise ask the user to
-use the editor.
-
-- **Database.** Do not add or edit `supabase/migrations/` or `drizzle/`.
-  Ask Lovable to change the schema.
-- **Generated files.** Do not edit a file whose header says it is automatically
-  generated.
-- **AI gateway.** Keep model calls on Lovable's gateway, and keep
-  `LOVABLE_API_KEY` out of browser code.
-- **Connectors.** Lovable provides native connectors. `list_connectors` shows
-  which are enabled; `add_connector` only returns the dashboard link. When a
-  connector is enabled, calls go through the connector gateway and need
-  `LOVABLE_API_KEY`. When Lovable does not provide one, users can bring their
-  own key and store it in Secrets.
-- **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+- Preserve the TanStack bootstrap and pinned dependencies when importing content pages; source package scripts are not executed.
+- Keep existing source-controlled media as real files and resolve them through shared media helpers so GitHub sync remains self-contained.
+- Render news/event photo branding through BrandedPhoto for both thumbnails and image viewers so logo fitting and stacking stay consistent.
+- Keep About presentation overrides in a shared browser-safe module and scope layout adjustments to About pages, so imported source content and other pages remain unchanged.
+- Keep support-page copy and presentation overrides in a browser-safe support module, leaving the imported source archive intact.
+- Mobile navigation uses explicitly toggled, vertically scrolling submenus within the shared reference header; shared mobile-shell overrides have greater specificity than imported desktop rules to prevent off-screen menus.
+- Store generated narration as shared media and replay it with native audio controls; playback must not generate another recording.
+- Contact and joining enquiries prepare email drafts with explicit status messages, rather than claiming unsent forms have been delivered.
+- backendserver/ is a standalone PHP+MySQL service: nested transactions must go through DB::tx (savepoint-safe); never call PDO beginTransaction directly inside another transaction.
+- Master Worker requests are HMAC-signed over "{ts}.{METHOD}.{path-with-query}.{sha256(body)}"; the signature path must include the query string in both signer and verifier.
+- Run backend tests with the API up (`php -S 127.0.0.1:8090 -t backendserver backendserver/index.php`) then `php backendserver/tests/run_tests.php` against a fresh lifeos MySQL database loaded from backendserver/database/*.sql.
+- Matching decisions use a row-existence query rather than scalar null checks because PDO fetchColumn returns false for a missing row; both tree bills belong to one beneficiary decision per sale.
+- Every consumed binary/enrollment volume unit records its source sale in lo_volumes and its pair in lo_volume_pairs (decision-keyed); carries must never lose source identity, so audits can trace any payout back to the sale that funded it.
+- Rank reward references are scoped to their beneficiary and validated under the pool lock before balance checks; this keeps replay safe after funds change and prevents changed-amount requests from appearing paid.
+- Member routes use a separate scoped reference shell and client-hydrated PHP bearer session; private account queries run only after the server validates the session, so public pages and SSR contain no member financial data.
+- Member/admin API clients share one base resolver; cPanel builds force same-origin /backendserver/api regardless of build-machine environment, while hosted previews retain VITE_LIFEOS_API_URL and the external fallback, so downloadable deployments are domain-portable.
+- PHP database initialization and signed migration requests share Migrations::apply; legacy dump initialization executes additive structure only to preserve existing accounts and avoid destructive resets.
+- The backend reads only its own backendserver/.env (overrides config.php); the app and scripts/master-update.py read the root .env (non-VITE vars never reach the browser). Empty .env values are ignored so a deployed backendserver/.env never blanks live passwords or the app secret.
+- Package all database migrations automatically; scoped live updates must use the updater's explicit file selection so missing schema cannot silently break activation.
+- Enforce admin feature switches and withdrawal limits through PanelPolicy on the PHP API; browser controls reflect member-safe settings but never replace server validation.
+- Master file paths resolve through their canonical existing ancestor with normalized Windows separators; this permits missing XAMPP files without allowing traversal or symlink escapes.
+- Member profile changes use the existing user_profiles table and locked user row, preserving the source legacy schema rather than replacing it.
+- Fit the member portal through a single measured desktop canvas in the shared MemberShell; scale the whole canvas rather than adding mobile reflow rules, so every page preserves reference proportions.
+- Keep the member reference styling in the shared member stylesheet and give login its standalone reference form; this prevents decorative overrides from drifting across member pages without changing authentication or financial rules.
+- Tree member details and reset controls use reference-styled design-system buttons, preserving image dimensions while allowing keyboard activation and Escape dismissal.
+- Enrollment avatar details use portaled design-system popovers and shared tree profile data for pair cards, so horizontal scrolling cannot hide details or mislabel historical sale BV as current BV.
+- Member login captcha is generated and consumed once by the PHP service in private temporary storage; never expose answers or add client-only validation/bypass endpoints, because browser checks do not protect authentication.
+- Captcha images use GD when available and otherwise a stroked SVG (no text glyphs), because the live XAMPP host lacks GD.
+- New money features (transfer, recharge) ship disabled by default and treat a missing switch as off; only an admin setting enables them, so unapproved financial rules never go live automatically.
+- New members must register through a sponsor referral link (except the very first account); the company ROOT member is created via the signed /api/master/root/ensure call so its password never sits in code.
+- Referral team previews are advisory; registration recomputes placement under a shared transaction-held lock and never trusts a submitted placement parent, preserving subtree isolation under concurrent joins.
+- Explicit team links traverse only the selected child pointer from the sponsor; keep legacy no-team placement separate so team registrations cannot spill into the opposite side.
+- Extended registration fields stay in the legacy users/user_profiles tables through additive migrations, keeping existing accounts and legacy referral registrations compatible.
+- Minute settlement uses the existing activation engine and database advisory lock through CLI or a Master-HMAC-signed PHP cron URL; admin exposes only setup/status, never signing secrets, and shared immutable Statements closing cannot create another payout or reset sale counters.
+- Cron switches (commission_cron_enabled, cron_http_execute, cron_base_url) may live in non-secret backendserver/runtime.php, because signed Master writes cannot modify config.php/.env; finance release still needs the admin setting.
+- Plan compliance is checked by backendserver/tests/plan_simulation.php: it drives the real API and cron runner, then recomputes every commission with an independent model; run it on a fresh local DB only (it refuses non-local hosts).
+- Admin login accepts email or username (admin_users.name) on the PHP API; the admin form uses a text field so usernames like Admin are not blocked by email validation.
+- Test Lab offers Reset (ROOT kept, clock back to today, nothing created), Create 300 Members, Add 1 Day Sales and Run 1 Day; every action runs under one MySQL GET_LOCK, Run 1 Day settles in ~40s resumable slices (host proxy limit 100s), and progress records are matched by a browser run_id because the host clock drifts.
+- Any code that needs "today" for money (daily caps, statements) must read MySQL CURRENT_DATE(), never PHP date(), so the Test Lab clock and real clock always agree.
+- Active New ID uses an append-only deposit ledger and one transaction for the fixed package payment and activation; legacy transfer writes return Gone so cashback cannot fund this replacement flow.
+- Old-site members are imported by scripts/legacy-import (build locally, dump for phpMyAdmin, push live in sub-1MB signed chunks); imported activations are stored already processed, so the engine never pays commission for pre-import sales.
+- Keep runtime test_lab_enabled false while real members exist, because Test Lab Reset deletes every account except ROOT.
