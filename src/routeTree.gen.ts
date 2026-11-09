@@ -42,6 +42,7 @@ import { Route as VideoGalleryRouteImport } from './routes/video-gallery'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminActivationsRouteImport } from './routes/admin.activations'
 import { Route as AdminBalanceAddRouteImport } from './routes/admin.balance-add'
+import { Route as AdminCashbackApiRouteImport } from './routes/admin.cashback-api'
 import { Route as AdminCronRouteImport } from './routes/admin.cron'
 import { Route as AdminJoiningReportRouteImport } from './routes/admin.joining-report'
 import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
@@ -248,6 +249,11 @@ const AdminActivationsRoute = AdminActivationsRouteImport.update({
 const AdminBalanceAddRoute = AdminBalanceAddRouteImport.update({
   id: '/balance-add',
   path: '/balance-add',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCashbackApiRoute = AdminCashbackApiRouteImport.update({
+  id: '/cashback-api',
+  path: '/cashback-api',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCronRoute = AdminCronRouteImport.update({
@@ -494,6 +500,7 @@ export interface FileRoutesByFullPath {
   '/video-gallery': typeof VideoGalleryRoute
   '/admin/activations': typeof AdminActivationsRoute
   '/admin/balance-add': typeof AdminBalanceAddRoute
+  '/admin/cashback-api': typeof AdminCashbackApiRoute
   '/admin/cron': typeof AdminCronRoute
   '/admin/joining-report': typeof AdminJoiningReportRoute
   '/admin/ledger': typeof AdminLedgerRoute
@@ -569,6 +576,7 @@ export interface FileRoutesByTo {
   '/video-gallery': typeof VideoGalleryRoute
   '/admin/activations': typeof AdminActivationsRoute
   '/admin/balance-add': typeof AdminBalanceAddRoute
+  '/admin/cashback-api': typeof AdminCashbackApiRoute
   '/admin/cron': typeof AdminCronRoute
   '/admin/joining-report': typeof AdminJoiningReportRoute
   '/admin/ledger': typeof AdminLedgerRoute
@@ -647,6 +655,7 @@ export interface FileRoutesById {
   '/video-gallery': typeof VideoGalleryRoute
   '/admin/activations': typeof AdminActivationsRoute
   '/admin/balance-add': typeof AdminBalanceAddRoute
+  '/admin/cashback-api': typeof AdminCashbackApiRoute
   '/admin/cron': typeof AdminCronRoute
   '/admin/joining-report': typeof AdminJoiningReportRoute
   '/admin/ledger': typeof AdminLedgerRoute
@@ -726,6 +735,7 @@ export interface FileRouteTypes {
     | '/video-gallery'
     | '/admin/activations'
     | '/admin/balance-add'
+    | '/admin/cashback-api'
     | '/admin/cron'
     | '/admin/joining-report'
     | '/admin/ledger'
@@ -801,6 +811,7 @@ export interface FileRouteTypes {
     | '/video-gallery'
     | '/admin/activations'
     | '/admin/balance-add'
+    | '/admin/cashback-api'
     | '/admin/cron'
     | '/admin/joining-report'
     | '/admin/ledger'
@@ -878,6 +889,7 @@ export interface FileRouteTypes {
     | '/video-gallery'
     | '/admin/activations'
     | '/admin/balance-add'
+    | '/admin/cashback-api'
     | '/admin/cron'
     | '/admin/joining-report'
     | '/admin/ledger'
@@ -1191,6 +1203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBalanceAddRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/cashback-api': {
+      id: '/admin/cashback-api'
+      path: '/cashback-api'
+      fullPath: '/admin/cashback-api'
+      preLoaderRoute: typeof AdminCashbackApiRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/cron': {
       id: '/admin/cron'
       path: '/cron'
@@ -1491,6 +1510,7 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminActivationsRoute: typeof AdminActivationsRoute
   AdminBalanceAddRoute: typeof AdminBalanceAddRoute
+  AdminCashbackApiRoute: typeof AdminCashbackApiRoute
   AdminCronRoute: typeof AdminCronRoute
   AdminJoiningReportRoute: typeof AdminJoiningReportRoute
   AdminLedgerRoute: typeof AdminLedgerRoute
@@ -1516,6 +1536,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminActivationsRoute: AdminActivationsRoute,
   AdminBalanceAddRoute: AdminBalanceAddRoute,
+  AdminCashbackApiRoute: AdminCashbackApiRoute,
   AdminCronRoute: AdminCronRoute,
   AdminJoiningReportRoute: AdminJoiningReportRoute,
   AdminLedgerRoute: AdminLedgerRoute,

@@ -23,13 +23,14 @@ final class Cron
         $last = DB::val("SELECT v FROM lo_settings WHERE k='cron_last_run'");
         $path = LIFEOS_ROOT . '/bin/settle.php';
         $bridge = LIFEOS_ROOT . '/bin/cron-http.php';
-        return ['url' => $base ? $base . '/api/public/cron/settle' : null,
+        return ['url' => $base . '/api/public/cron/settle', 'backend_base_url' => $base,
+            'url_source' => $configured === '' ? 'current-domain' : 'configured',
             'endpoint_path' => '/api/public/cron/settle', 'timezone' => 'Asia/Dhaka', 'schedule' => '* * * * *',
             'server_enabled' => $enabled, 'finance_approved' => $approved,
             'mode' => Config::get('cron_http_execute', false) === true ? 'execute' : 'dry-run',
             'last_run' => $last ? json_decode((string) $last, true) : null,
             'cli_command' => '/usr/local/bin/php ' . escapeshellarg($path) . ($enabled && $approved ? ' --execute' : ' --dry-run') . ' --batch=100',
-            'url_command' => '/usr/local/bin/php ' . escapeshellarg($bridge),
+            'url_command' => '/usr/local/bin/php ' . escapeshellarg($bridge) . ' --base-url=' . escapeshellarg($base),
             'scheduler_verified' => false,
             // Software date follows the Test Lab clock when it is on.
             'software_date' => (string) DB::val('SELECT CURRENT_DATE()'),
