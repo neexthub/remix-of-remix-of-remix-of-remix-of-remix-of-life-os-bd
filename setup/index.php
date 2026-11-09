@@ -83,7 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'insta
             $applied = array_merge($applied, LifeOS\Migrations::apply($pdo));
         } else {
             $hash = password_hash($adminPassword, PASSWORD_DEFAULT);
-            $pdo->prepare('INSERT INTO admin_users (name, email, password, role_id, two_fa_enabled) VALUES (?,?,?,1,0)')->execute([$old['admin_name'], $old['admin_email'], $hash]);
+            $adminId = (int) $pdo->query('SELECT COALESCE(MAX(id),0)+1 FROM admin_users')->fetchColumn();
+            $pdo->prepare('INSERT INTO admin_users (id, name, email, password, role_id, two_fa_enabled) VALUES (?,?,?,?,1,0)')->execute([$adminId, $old['admin_name'], $old['admin_email'], $hash]);
             $pdo->prepare('INSERT INTO users (life_id, membership_no, referral_code, phone, pin_hash, status, accepted_terms) VALUES ("ROOT","ROOT","ROOT","00000000000",?,"active",1)')->execute([$hash]);
             $rootId = (int) $pdo->lastInsertId();
             $pdo->prepare('INSERT INTO user_wallets (user_id) VALUES (?)')->execute([$rootId]);
