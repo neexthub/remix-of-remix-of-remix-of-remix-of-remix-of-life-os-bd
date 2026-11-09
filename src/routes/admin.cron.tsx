@@ -106,3 +106,6 @@ function CronSetup() {
 function Command({ text, copy }: { text: string; copy: (text: string) => Promise<void> }) {
   return <div className="flex items-start gap-2 border border-border bg-muted p-3"><code className="min-w-0 flex-1 break-all">{text}</code><Button variant="outline" size="icon" title="Copy command" aria-label={`Copy ${text.includes("cron-http") ? "signed URL" : "direct PHP"} command`} onClick={() => void copy(text)}><Copy /></Button></div>;
 }
+function DataGuide({ rows }: { rows: string[][] }) {
+  return <table className="w-full border border-border text-sm"><thead><tr className="bg-primary text-primary-foreground"><th className="p-2 text-left">Symptom</th><th className="p-2 text-left">What to do</th></tr></thead><tbody>{rows.map(([symptom, action]) => <tr key={symptom} className="border-t border-border"><td className="p-2 align-top font-bold">{symptom}</td><td className="p-2">{action}</td></tr>)}</tbody></table>;
+}
