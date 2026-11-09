@@ -80,6 +80,7 @@ import { Route as MemberTransactionRouteImport } from './routes/member.transacti
 import { Route as MemberTransactionPinRouteImport } from './routes/member.transaction-pin'
 import { Route as MemberTransactionReportRouteImport } from './routes/member.transaction-report'
 import { Route as MemberTreeRouteImport } from './routes/member.tree'
+import { Route as MemberWalletSwapRouteImport } from './routes/member.wallet-swap'
 import { Route as MemberWithdrawalsRouteImport } from './routes/member.withdrawals'
 import { Route as MemberWithdrawalsReportRouteImport } from './routes/member.withdrawals-report'
 import { Route as ServicesSlugRouteImport } from './routes/services.$slug'
@@ -439,6 +440,11 @@ const MemberTreeRoute = MemberTreeRouteImport.update({
   path: '/tree',
   getParentRoute: () => MemberRoute,
 } as any)
+const MemberWalletSwapRoute = MemberWalletSwapRouteImport.update({
+  id: '/wallet-swap',
+  path: '/wallet-swap',
+  getParentRoute: () => MemberRoute,
+} as any)
 const MemberWithdrawalsRoute = MemberWithdrawalsRouteImport.update({
   id: '/withdrawals',
   path: '/withdrawals',
@@ -525,6 +531,7 @@ export interface FileRoutesByFullPath {
   '/member/transaction-pin': typeof MemberTransactionPinRoute
   '/member/transaction-report': typeof MemberTransactionReportRoute
   '/member/tree': typeof MemberTreeRoute
+  '/member/wallet-swap': typeof MemberWalletSwapRoute
   '/member/withdrawals': typeof MemberWithdrawalsRoute
   '/member/withdrawals-report': typeof MemberWithdrawalsReportRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -599,6 +606,7 @@ export interface FileRoutesByTo {
   '/member/transaction-pin': typeof MemberTransactionPinRoute
   '/member/transaction-report': typeof MemberTransactionReportRoute
   '/member/tree': typeof MemberTreeRoute
+  '/member/wallet-swap': typeof MemberWalletSwapRoute
   '/member/withdrawals': typeof MemberWithdrawalsRoute
   '/member/withdrawals-report': typeof MemberWithdrawalsReportRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -676,6 +684,7 @@ export interface FileRoutesById {
   '/member/transaction-pin': typeof MemberTransactionPinRoute
   '/member/transaction-report': typeof MemberTransactionReportRoute
   '/member/tree': typeof MemberTreeRoute
+  '/member/wallet-swap': typeof MemberWalletSwapRoute
   '/member/withdrawals': typeof MemberWithdrawalsRoute
   '/member/withdrawals-report': typeof MemberWithdrawalsReportRoute
   '/services/$slug': typeof ServicesSlugRoute
@@ -754,6 +763,7 @@ export interface FileRouteTypes {
     | '/member/transaction-pin'
     | '/member/transaction-report'
     | '/member/tree'
+    | '/member/wallet-swap'
     | '/member/withdrawals'
     | '/member/withdrawals-report'
     | '/services/$slug'
@@ -828,6 +838,7 @@ export interface FileRouteTypes {
     | '/member/transaction-pin'
     | '/member/transaction-report'
     | '/member/tree'
+    | '/member/wallet-swap'
     | '/member/withdrawals'
     | '/member/withdrawals-report'
     | '/services/$slug'
@@ -904,6 +915,7 @@ export interface FileRouteTypes {
     | '/member/transaction-pin'
     | '/member/transaction-report'
     | '/member/tree'
+    | '/member/wallet-swap'
     | '/member/withdrawals'
     | '/member/withdrawals-report'
     | '/services/$slug'
@@ -1445,6 +1457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MemberTreeRouteImport
       parentRoute: typeof MemberRoute
     }
+    '/member/wallet-swap': {
+      id: '/member/wallet-swap'
+      path: '/wallet-swap'
+      fullPath: '/member/wallet-swap'
+      preLoaderRoute: typeof MemberWalletSwapRouteImport
+      parentRoute: typeof MemberRoute
+    }
     '/member/withdrawals': {
       id: '/member/withdrawals'
       path: '/withdrawals'
@@ -1539,6 +1558,7 @@ interface MemberRouteChildren {
   MemberTransactionPinRoute: typeof MemberTransactionPinRoute
   MemberTransactionReportRoute: typeof MemberTransactionReportRoute
   MemberTreeRoute: typeof MemberTreeRoute
+  MemberWalletSwapRoute: typeof MemberWalletSwapRoute
   MemberWithdrawalsRoute: typeof MemberWithdrawalsRoute
   MemberWithdrawalsReportRoute: typeof MemberWithdrawalsReportRoute
   MemberIndexRoute: typeof MemberIndexRoute
@@ -1562,6 +1582,7 @@ const MemberRouteChildren: MemberRouteChildren = {
   MemberTransactionPinRoute: MemberTransactionPinRoute,
   MemberTransactionReportRoute: MemberTransactionReportRoute,
   MemberTreeRoute: MemberTreeRoute,
+  MemberWalletSwapRoute: MemberWalletSwapRoute,
   MemberWithdrawalsRoute: MemberWithdrawalsRoute,
   MemberWithdrawalsReportRoute: MemberWithdrawalsReportRoute,
   MemberIndexRoute: MemberIndexRoute,
