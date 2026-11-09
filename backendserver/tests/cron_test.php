@@ -3,6 +3,10 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/src/bootstrap.php';
 function check(bool $ok, string $label): void { if (!$ok) throw new RuntimeException($label); echo "PASS: $label\n"; }
 check(\LifeOS\Cron::baseUrl('https://example.com/backendserver/') === 'https://example.com/backendserver', 'HTTPS backend base normalized');
+$_SERVER['HTTP_HOST'] = 'lifeos.example';
+$_SERVER['HTTPS'] = 'on';
+$_SERVER['SCRIPT_NAME'] = '/backendserver/index.php';
+check(\LifeOS\ServerUrls::backendBase() === 'https://lifeos.example/backendserver', 'Current domain and backend path detected automatically');
 foreach (['http://example.com', 'https://user:pass@example.com', 'https://example.com?key=x', 'https://example.com#x', "https://example.com\n"] as $url) {
     try { \LifeOS\Cron::baseUrl($url); $blocked=false; } catch (\LifeOS\HttpError $error) { $blocked=$error->status===422; }
     check($blocked, 'Unsafe scheduler base rejected');
