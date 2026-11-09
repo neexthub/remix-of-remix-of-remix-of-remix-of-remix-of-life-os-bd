@@ -1,5 +1,6 @@
 """Package already-built cPanel public files without private server configuration."""
 from pathlib import Path
+import os
 import shutil
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -20,6 +21,10 @@ for name in ['index.php', '.htaccess', 'config.example.php', 'README.md', 'src',
 (BACKEND / 'storage/.htaccess').write_text('Require all denied\n')
 # Domain/setup installer: DB credentials + schema-only or bundled legacy data.
 shutil.copytree(ROOT / 'setup', WEB / 'setup', ignore=shutil.ignore_patterns('.install-*', '*.log', 'test_*.php'))
+legacy_sql = Path(os.environ.get('LIFEOS_LEGACY_SQL', str(ROOT / 'setup/legacy-data.sql.gz')))
+if not legacy_sql.is_file():
+    raise SystemExit('Legacy SQL required: set LIFEOS_LEGACY_SQL to the signed LifeOS-Legacy-Data.sql.gz export.')
+shutil.copy2(legacy_sql, WEB / 'setup/legacy-data.sql.gz')
 (STAGE / 'INSTALL-BANGLA.txt').write_text('''Life OS — cPanel installation (domain root)
 
 ১. আগে বর্তমান ওয়েবসাইট ও MySQL database-এর backup নিন। ZIP-এর public_html-এর ভেতরের সব ফাইল আপনার domain-এর document root-এ দিন। .htaccess-ও দিতে হবে।
