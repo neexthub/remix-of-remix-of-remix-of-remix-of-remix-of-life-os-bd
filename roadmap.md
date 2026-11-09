@@ -1,3 +1,10 @@
+# Current cron guide, merchant cashback API and installer request
+- [ ] Add domain-derived cron URL and a complete admin cPanel cron guide.
+- [ ] Add hashed merchant API-key management, integration guide and atomic authenticated cashback debit with idempotency and audit history.
+- [ ] Add /setup cPanel installer for schema-only or legacy-data setup, configuration writing, results and confirmed self-deletion/home redirect.
+- [ ] Test financial rules, installer paths, admin/member browser flows and packages on isolated local data only.
+- [ ] Deliver cPanel ZIP, complete frontend/backend source ZIP, full schema SQL and legacy-data SQL.
+
 # Current legacy database import request
 - [x] Download old site SQL (lifeosbd_new.sql, 72,753 users) and analyse it in an isolated local database.
 - [x] Build refined local DB: users, profiles (no images), sponsor + binary tree, active package records (already settled, no new commission), kept ranks, old transaction history; all balances zero.
