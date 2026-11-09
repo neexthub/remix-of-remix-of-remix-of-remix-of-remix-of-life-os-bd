@@ -51,4 +51,3 @@
 - Active New ID uses an append-only deposit ledger and one transaction for the fixed package payment and activation; legacy transfer writes return Gone so cashback cannot fund this replacement flow.
 - Old-site members are imported by scripts/legacy-import (build locally, dump for phpMyAdmin, push live in sub-1MB signed chunks); imported activations are stored already processed, so the engine never pays commission for pre-import sales.
 - Keep runtime test_lab_enabled false while real members exist, because Test Lab Reset deletes every account except ROOT.
-- Serve mp3/mp4 from public/ via BASE_URL; the dev bundler can't import them.

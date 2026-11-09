@@ -1,0 +1,1 @@
+- Serve mp3/mp4 from public/ via BASE_URL; the dev bundler can't import them.
