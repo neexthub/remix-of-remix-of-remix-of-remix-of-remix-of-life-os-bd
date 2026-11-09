@@ -4,6 +4,7 @@
 - [x] Add /setup cPanel installer for schema-only or legacy-data setup, configuration writing, results and confirmed self-deletion/home redirect.
 - [x] Test financial rules, installer paths and admin browser flows on isolated local data: backend 122+14+24 checks, installer parser/delete 5, frontend 9, fresh install, real 72,753-member/992,158-history import, admin cron/key controls; no live member funds moved.
 - [x] Deliver cPanel ZIP, complete frontend/backend source ZIP, full schema SQL and legacy-data SQL; ZIP integrity/private-file audits and SQL checksums pass.
+- [ ] New user request: produce a separate sensitive-source ZIP that also retains the existing config/key files and the old-site database backup, without changing the sanitized cPanel deploy ZIP.
 
 # Current legacy database import request
 - [x] Download old site SQL (lifeosbd_new.sql, 72,753 users) and analyse it in an isolated local database.
