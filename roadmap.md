@@ -120,3 +120,8 @@
 - [x] Verified in browser: build OK, no console errors
 - [ ] Confirm rank name "Gold/Executive" (1000 matchings) — the plan document labels it this way; rename if it is a typo
 - [ ] Live PHP API verification — blocked: deserver.neexthub.site returns 502
+
+# D wallet / E wallet (2026-11-09)
+- [x] Rename Deposit -> D Wallet, Withdraw -> E Wallet; E->D swap with 4% charge; fixed 10% E withdrawal charge reserved with the amount (Wallet::available now subtracts amount + charge).
+- [x] Live: 011 migration + Wallet/PanelPolicy/routes_member deployed and read back; old-site login fixes (dashless Life ID, trimmed password, shared phone) deployed. Real browser test with temporary QA admin/member: 21 admin + 21 member pages, swap 1000 -> D 960, withdraw 500 -> E 450, admin reject -> E 1000; zero browser/API errors; QA rows removed (users back to 72,753).
+- [x] Local suite on fresh MariaDB: run_tests 122/122 (retired transfer checks now expect 410), wallet_swap_login_test 14/14, policy/plan/captcha/path tests, frontend 9/9. cPanel package LifeOS-cPanel_v4.zip built and smoke-tested.

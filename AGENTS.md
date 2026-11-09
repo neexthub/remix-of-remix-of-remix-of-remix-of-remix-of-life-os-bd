@@ -51,3 +51,5 @@
 - Active New ID uses an append-only deposit ledger and one transaction for the fixed package payment and activation; legacy transfer writes return Gone so cashback cannot fund this replacement flow.
 - Old-site members are imported by scripts/legacy-import (build locally, dump for phpMyAdmin, push live in sub-1MB signed chunks); imported activations are stored already processed, so the engine never pays commission for pre-import sales.
 - Keep runtime test_lab_enabled false while real members exist, because Test Lab Reset deletes every account except ROOT.
+- E wallet = withdrawable earnings, D wallet = deposit ledger; E->D swaps are recorded in lo_wallet_swaps (debit E by full amount) plus an E_SWAP lo_deposits credit (amount minus charge), and charge percentages live as PanelPolicy constants so admin settings cannot change them.
+- Audio/video media load from public/ via import.meta.env.BASE_URL, because the dev bundler cannot import mp3/mp4 files from src/assets.
