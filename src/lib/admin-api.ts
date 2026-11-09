@@ -2,10 +2,17 @@
 import { LIFEOS_API_BASE as BASE } from "./api-base";
 export const ADMIN_API_BASE = BASE;
 const KEY = "lifeos_admin_token";
-export const ADMIN_DEMO_TOKEN = "demo";
-
 export const adminToken = {
-  get: () => (typeof window === "undefined" ? null : window.localStorage.getItem(KEY)),
+  get: () => {
+    if (typeof window === "undefined") return null;
+    window.localStorage.removeItem("lifeos_admin_demo_db");
+    const token = window.localStorage.getItem(KEY);
+    if (token === "demo") {
+      window.localStorage.removeItem(KEY);
+      return null;
+    }
+    return token;
+  },
   set: (t: string) => window.localStorage.setItem(KEY, t),
   clear: () => window.localStorage.removeItem(KEY),
 };
@@ -13,10 +20,6 @@ export const adminToken = {
 export async function adminApi<T = unknown>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
   const token = adminToken.get();
   const method = init.method ?? (init.body ? "POST" : "GET");
-  if (token === ADMIN_DEMO_TOKEN) {
-    const { adminDemoApi } = await import("./admin-demo");
-    return (await adminDemoApi(path, method, init.body)) as T;
-  }
   const res = await fetch(`${BASE}/admin${path}`, {
     method,
     headers: {

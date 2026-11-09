@@ -483,4 +483,3 @@ body{top:0!important}
 .admin-login-actions { display: flex; gap: 6px; justify-content: flex-start; }
 .admin-login-btn { border: 1px solid #999; background: #f4f4f4; font-size: 11px; padding: 2px 8px; cursor: pointer; }
 .admin-login-btn:hover { background: #e8f4ec; }
-.admin-login-demo { margin-top: 12px; background: none; border: 0; color: #2e7d32; font-size: 11px; text-decoration: underline; cursor: pointer; }

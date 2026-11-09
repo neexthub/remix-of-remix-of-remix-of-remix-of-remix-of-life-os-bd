@@ -1,3 +1,8 @@
+# Remove admin demo and rebuild four downloads
+- [ ] Remove all admin demo credentials, shortcut login and simulated admin API; invalidate old demo sessions.
+- [ ] Test real-server-only admin authentication and browser login page.
+- [ ] Repackage cPanel ZIP, complete source ZIP, schema SQL and preserved legacy SQL with versioned filenames.
+
 # Current cron guide, merchant cashback API and installer request
 - [x] Add domain-derived cron URL and a complete admin cPanel cron guide.
 - [x] Add hashed merchant API-key management, integration guide and atomic authenticated cashback debit with idempotency and audit history; live migration deployed with API still disabled and no live key/debit.
