@@ -1,7 +1,7 @@
 # Remove admin demo and rebuild four downloads
 - [x] Remove all admin demo credentials, shortcut login and simulated admin API; invalidate old demo sessions.
 - [x] Test real-server-only admin authentication: 12 frontend tests pass; browser confirms removed demo UI, purged old session, actual PHP rejection (401), and protected admin redirect.
-- [ ] Repackage cPanel ZIP, complete source ZIP, schema SQL and preserved legacy SQL with versioned filenames.
+- [x] Repackage cPanel ZIP v6 and private complete source ZIP v3 (existing config/keys kept); both ZIP integrity/demo/exclusion checks pass. Schema v2 and legacy SQL v2 preserved byte-for-byte; no database change required. External live frontend deployment was not requested/performed.
 
 # Current cron guide, merchant cashback API and installer request
 - [x] Add domain-derived cron URL and a complete admin cPanel cron guide.
