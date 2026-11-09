@@ -1,5 +1,5 @@
 import logo from "@/assets/life-os-logo.png";
-import introVideo from "@/assets/lifeos-logo-intro.mp4";
+const introVideo = `${import.meta.env.BASE_URL}media/lifeos-logo-intro.mp4`;
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import parse, { attributesToProps, domToReact, Element, type DOMNode, type HTMLReactParserOptions } from "html-react-parser";

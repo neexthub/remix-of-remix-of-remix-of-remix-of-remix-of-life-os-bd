@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { ReferenceSite, BrandedPhoto } from "@/components/reference-site";
-const speech = "/audio/lifeos-smart-solutions.mp3";
+const speech = `${import.meta.env.BASE_URL}audio/lifeos-smart-solutions.mp3`;
 import cover from "@/assets/lifeos-join-team.jpg";
 
 export const Route = createFileRoute("/audio-gallery")({
