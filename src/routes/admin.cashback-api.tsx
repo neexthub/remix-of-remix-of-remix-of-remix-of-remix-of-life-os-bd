@@ -35,10 +35,13 @@ function CashbackApiSetup() {
     catch (e) { setMessage({ text: (e as Error).message }); }
     finally { setBusy(false); }
   };
-  const generate = (e: React.FormEvent) => e.preventDefault() || run(async () => {
-    const r = await adminApi<{ api_key: string; notice: string }>("/merchant-api/keys", { body: { name } });
-    setNewKey(r); setMessage({ ok: true, text: "API key created. Save it in the merchant server now." });
-  });
+  const generate = (e: React.FormEvent) => {
+    e.preventDefault();
+    void run(async () => {
+      const r = await adminApi<{ api_key: string; notice: string }>("/merchant-api/keys", { body: { name } });
+      setNewKey(r); setMessage({ ok: true, text: "API key created. Save it in the merchant server now." });
+    });
+  };
   const toggle = () => run(async () => {
     await adminApi("/merchant-api/toggle", { body: { enabled: !data?.enabled } });
     setMessage({ ok: true, text: data?.enabled ? "Merchant API disabled." : "Merchant API enabled." });
