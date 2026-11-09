@@ -1,1 +1,2 @@
 - Serve mp3/mp4 from public/ via BASE_URL; the dev bundler can't import them.
+- Admin authentication always calls the PHP API; invalidate retired demo sessions so simulated access cannot survive upgrades.
