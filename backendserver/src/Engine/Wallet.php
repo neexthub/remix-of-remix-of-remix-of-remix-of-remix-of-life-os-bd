@@ -38,6 +38,8 @@ final class Wallet
         $cashback = (float) DB::val("SELECT COALESCE(SUM(amount),0) FROM lo_ledger WHERE user_id = ? AND ledger_type = 'CASHBACK' AND status = 'PAID'", [$userId]);
         $out = (float) DB::val('SELECT COALESCE(SUM(amount),0) FROM lo_transfers WHERE from_user_id = ?', [$userId]);
         $in = (float) DB::val('SELECT COALESCE(SUM(amount),0) FROM lo_transfers WHERE to_user_id = ?', [$userId]);
-        return round($cashback - $out + $in, 6);
+        // Confirmed merchant-app purchases spend cashback only; E/D wallets are untouched.
+        $merchant = (float) DB::val('SELECT COALESCE(SUM(amount),0) FROM lo_merchant_cashback_debits WHERE user_id = ?', [$userId]);
+        return round($cashback - $out + $in - $merchant, 6);
     }
 }
