@@ -36,13 +36,13 @@ function ActiveNewId() {
         <Msg ok={msg?.ok} text={msg?.t ?? (w.error ? (w.error as Error).message : disabled ? "Active New ID is currently disabled." : null)} />
         <table width="100%" border={0} cellSpacing={5} cellPadding={0}>
           <tbody>
-            <tr><td width="40%">Deposit Wallet Balance</td><td width="2%">:</td><td>{bdt(w.data?.deposit_balance)}</td></tr>
+            <tr><td width="40%">D Wallet Balance</td><td width="2%">:</td><td>{bdt(w.data?.deposit_balance)}</td></tr>
             <tr><td>User ID to Activate <sup>*</sup></td><td>:</td><td><input type="text" required maxLength={40} value={f.receiver} onChange={(e) => setF({ ...f, receiver: e.target.value })} /></td></tr>
             <tr><td>Package Amount</td><td>:</td><td><input type="text" readOnly value={PACKAGE_FEE.toFixed(2)} aria-label="Package amount" /></td></tr>
             <tr><td>Your Login Password <sup>*</sup></td><td>:</td><td><input type="password" autoComplete="current-password" required value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} style={{ width: 90 }} /></td></tr>
             <tr><td>Your Transaction Password <sup>*</sup></td><td>:</td><td><input type="password" required value={f.transaction_password} onChange={(e) => setF({ ...f, transaction_password: e.target.value })} style={{ width: 90 }} /> <Link to="/member/transaction-pin" style={{ color: "#0577B5" }}>Set PIN</Link></td></tr>
             <tr><td></td><td>:</td><td><input type="submit" value={busy ? "Activating…" : "Confirm & Activate"} disabled={busy || !w.data || disabled || low} /></td></tr>
-            {low && w.data && <tr><td colSpan={3} className="error">Deposit wallet needs at least {bdt(PACKAGE_FEE)}. Only the Deposit wallet can be used.</td></tr>}
+            {low && w.data && <tr><td colSpan={3} className="error">D wallet needs at least {bdt(PACKAGE_FEE)}. Only the D wallet can be used.</td></tr>}
           </tbody>
         </table>
       </form>

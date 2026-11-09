@@ -35,6 +35,7 @@ const MENU: { label: string; items: { to: string; label: string }[] }[] = [
   {
     label: "Withdrawals",
     items: [
+      { to: "/member/wallet-swap", label: "E to D Wallet Swap" },
       { to: "/member/withdrawals", label: "Withdrawals Form" },
       { to: "/member/withdrawals-report", label: "Withdrawals Reports" },
     ],

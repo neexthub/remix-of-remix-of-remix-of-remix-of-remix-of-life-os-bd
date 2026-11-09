@@ -40,7 +40,7 @@ function Withdraw() {
         <Msg ok={msg?.ok} text={msg?.t ?? (w.error ? (w.error as Error).message : settings.error ? (settings.error as Error).message : disabled ? "Withdrawal requests are currently disabled." : null)} />
         <table width="50%" border={0} cellSpacing={10} cellPadding={0}>
           <tbody>
-            <tr><td width="50%">Your Withdraw Amount</td><td>:</td><td>{bdt(w.data?.withdrawable)}</td></tr>
+            <tr><td width="50%">E Wallet Balance</td><td>:</td><td>{bdt(w.data?.withdrawable)}</td></tr>
             <tr><td>Enter Withdraw Amount <sup>*</sup></td><td>:</td><td><input type="text" inputMode="decimal" required value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} style={{ ...W100, textAlign: "right" }} /></td></tr>
             <tr><td>Select A Payment Method <sup>*</sup></td><td>:</td><td>
               <select value={f.method} onChange={(e) => setF({ ...f, method: e.target.value })} style={{ width: 150 }}>

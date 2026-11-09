@@ -486,6 +486,8 @@ $router->get('/api/member/settings', function () {
         'profile_edit_status' => '1', 'transfer_status' => '0', 'transfer_min' => '10', 'transfer_max' => '25000',
         'recharge_status' => '0', 'recharge_min' => '10', 'recharge_max' => '5000'];
     foreach (DB::all('SELECT k, v FROM lo_settings') as $row) if (array_key_exists($row['k'], $out)) $out[$row['k']] = $row['v'];
+    $out['withdraw_charge_pct'] = (string) \LifeOS\PanelPolicy::WITHDRAW_CHARGE_PCT;
+    $out['swap_charge_pct'] = (string) \LifeOS\PanelPolicy::SWAP_CHARGE_PCT;
     $out['operators'] = \LifeOS\PanelPolicy::RECHARGE_OPERATORS;
     Http::ok($out);
 });

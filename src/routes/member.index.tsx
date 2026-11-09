@@ -70,7 +70,7 @@ function Dashboard() {
                   <Title t="Service Wallet Statement" />
                   <Item k="Cashback Wallet (service use only)" v={bdt(w?.cashback_service_only)} />
                   <Item k="All Total Out Amount" v={bdt(totalOut)} />
-                  <Item k="Deposit Wallet (Active New ID)" v={bdt(w?.deposit_balance)} />
+                  <Item k="D Wallet (Deposit / Active New ID)" v={bdt(w?.deposit_balance)} />
                   <Item k="Pending Mobile Recharge" v={bdt(w?.recharge_pending)} />
                   <Line />
                   <Cur k="Remaining Current Balance" v={bdt(w?.withdrawable)} />
@@ -100,8 +100,8 @@ function Dashboard() {
               <div className="lo-wallets">
                 {([
                   ["CASHBACK WALLET", w?.service_balance],
-                  ["DEPOSIT WALLET", w?.deposit_balance],
-                  ["WITHDRAW WALLET", w?.withdrawable],
+                  ["D WALLET", w?.deposit_balance],
+                  ["E WALLET", w?.withdrawable],
                   ["TOTAL BALANCE", Number(w?.service_balance ?? 0) + Number(w?.deposit_balance ?? 0) + Number(w?.withdrawable ?? 0)],
                 ] as [string, number | undefined][]).map(([k, v]) => (
                   <div key={k} className="div_block lo-status"><h2>{k}</h2><h4>{bdt(v)}</h4></div>
