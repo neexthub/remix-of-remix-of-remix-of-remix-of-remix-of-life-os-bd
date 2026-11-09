@@ -14,6 +14,7 @@ require __DIR__ . '/src/Api/routes_member.php';
 require __DIR__ . '/src/Api/routes_admin.php';
 require __DIR__ . '/src/Api/routes_master.php';
 require __DIR__ . '/src/Api/routes_cron.php';
+require __DIR__ . '/src/Api/routes_merchant.php';
 
 try {
     $router->dispatch($_SERVER['REQUEST_METHOD'], Http::path());
