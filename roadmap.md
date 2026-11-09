@@ -1,6 +1,6 @@
 # Remove admin demo and rebuild four downloads
-- [ ] Remove all admin demo credentials, shortcut login and simulated admin API; invalidate old demo sessions.
-- [ ] Test real-server-only admin authentication and browser login page.
+- [x] Remove all admin demo credentials, shortcut login and simulated admin API; invalidate old demo sessions.
+- [x] Test real-server-only admin authentication: 12 frontend tests pass; browser confirms removed demo UI, purged old session, actual PHP rejection (401), and protected admin redirect.
 - [ ] Repackage cPanel ZIP, complete source ZIP, schema SQL and preserved legacy SQL with versioned filenames.
 
 # Current cron guide, merchant cashback API and installer request
