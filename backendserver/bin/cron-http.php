@@ -3,7 +3,9 @@ declare(strict_types=1);
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 require dirname(__DIR__) . '/src/bootstrap.php';
 try {
-    $base = \LifeOS\Cron::baseUrl((string) \LifeOS\Config::get('cron_base_url', ''));
+    $option = '';
+    foreach (array_slice($argv, 1) as $arg) if (str_starts_with($arg, '--base-url=')) $option = substr($arg, 11);
+    $base = \LifeOS\Cron::baseUrl($option !== '' ? $option : (string) \LifeOS\Config::get('cron_base_url', ''));
     $key = (string) \LifeOS\Config::get('master_key', '');
     if ($key === '' || $key === 'change-me-master-key') throw new RuntimeException('Not configured');
     $path = '/api/public/cron/settle';

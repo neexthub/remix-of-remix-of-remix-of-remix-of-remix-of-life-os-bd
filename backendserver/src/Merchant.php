@@ -77,6 +77,12 @@ final class Merchant
             }
             if (!$user) throw new HttpError('Invalid member credentials', 401);
             DB::one('SELECT id FROM users WHERE id = ? FOR UPDATE', [(int) $user['id']]);
+            // A concurrent retry may have committed while this request waited for the member lock.
+            $existing = DB::one('SELECT * FROM lo_merchant_cashback_debits WHERE merchant_key_id = ? AND request_id = ?', [(int) $key['id'], $requestId]);
+            if ($existing) {
+                if (!hash_equals((string) $existing['request_hash'], $requestHash)) throw new HttpError('request_id was already used for a different member or amount', 409);
+                return self::response($existing, true);
+            }
             if ($user['status'] === 'suspended') throw new HttpError('Member account is suspended', 403);
             $available = Wallet::service((int) $user['id']);
             if ($amount > $available + 1e-9) throw new HttpError('Insufficient cashback balance', 422);

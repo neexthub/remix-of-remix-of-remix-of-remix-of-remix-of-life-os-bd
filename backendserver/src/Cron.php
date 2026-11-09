@@ -16,7 +16,8 @@ final class Cron
     public static function status(): array
     {
         $configured = (string) Config::get('cron_base_url', '');
-        $base = $configured === '' ? null : self::baseUrl($configured);
+        $auto = ServerUrls::backendBase();
+        $base = $configured === '' ? $auto : self::baseUrl($configured);
         $enabled = Config::get('commission_cron_enabled', false) === true;
         $approved = DB::val("SELECT v FROM lo_settings WHERE k='financial_release_approved'") === '1';
         $last = DB::val("SELECT v FROM lo_settings WHERE k='cron_last_run'");
