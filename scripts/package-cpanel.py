@@ -19,6 +19,8 @@ for name in ['index.php', '.htaccess', 'config.example.php', 'README.md', 'src',
         shutil.copy2(source, BACKEND / name)
 (BACKEND / 'storage').mkdir()
 (BACKEND / 'storage/.htaccess').write_text('Require all denied\n')
+# Browser installer: DB credentials + schema-only or bundled legacy data. No private configuration is packaged.
+shutil.copytree(ROOT / 'setup', WEB / 'setup', ignore=shutil.ignore_patterns('.install-*', '*.log'))
 (STAGE / 'INSTALL-BANGLA.txt').write_text('''Life OS — cPanel deployment (domain root)
 
 ১. আগে বর্তমান ওয়েবসাইট ও MySQL ডাটাবেসের backup নিন। ZIP-এর public_html-এর ভেতরের সব ফাইল আপনার domain-এর document root-এ দিন। .htaccess-ও দিতে হবে।

@@ -13,12 +13,14 @@ final class LifeOsInstaller
         if (!$handle) throw new RuntimeException('Cannot open the legacy data SQL file.');
         $read = fn(int $n) => $compressed ? gzread($handle, $n) : fread($handle, $n);
         $eof = fn() => $compressed ? gzeof($handle) : feof($handle);
-        $buffer = ''; $quote = null; $lineComment = false; $blockComment = false; $count = 0;
+        $buffer = ''; $quote = null; $lineComment = false; $blockComment = false; $count = 0; $carry = '';
         try {
-            while (!$eof()) {
-                $chunk = $read(65536);
+            while (!$eof() || $carry !== '') {
+                $chunk = $eof() ? $carry : $carry . $read(65536);
                 if ($chunk === false) throw new RuntimeException('Failed while reading the SQL file.');
-                $length = strlen($chunk);
+                // Keep two lookahead characters so comments, escapes and doubled quotes can span reads.
+                if (!$eof()) { $carry = substr($chunk, -2); $length = strlen($chunk) - 2; }
+                else { $carry = ''; $length = strlen($chunk); }
                 for ($i = 0; $i < $length; $i++) {
                     $c = $chunk[$i]; $next = $chunk[$i + 1] ?? '';
                     if ($lineComment) {
@@ -32,13 +34,10 @@ final class LifeOsInstaller
                     if ($quote !== null) {
                         $buffer .= $c;
                         if ($c === '\\' && $next !== '') {
-                            if ($i + 1 < $length) { $buffer .= $next; $i++; }
-                            else { $nextChunk = $read(1); if ($nextChunk !== false && $nextChunk !== '') { $buffer .= $nextChunk; } }
+                            $buffer .= $next; $i++;
                         } elseif ($c === $quote) {
-                            if ($next === $quote) {
-                                if ($i + 1 < $length) { $buffer .= $next; $i++; }
-                                else { $nextChunk = $read(1); if ($nextChunk !== false && $nextChunk !== '') { $buffer .= $nextChunk; } }
-                            } else $quote = null;
+                            if ($next === $quote) { $buffer .= $next; $i++; }
+                            else $quote = null;
                         }
                         continue;
                     }

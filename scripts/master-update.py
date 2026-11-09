@@ -27,6 +27,7 @@ FILES = ["src/Migrations.php", "src/bootstrap.php", "src/Auth.php", "src/Captcha
 FILES += [str(path.relative_to(ROOT)) for path in sorted((ROOT / "database").glob("*.sql"))]
 FILES += ["src/Engine/Statements.php", "src/Engine/Settlement.php", "bin/settle.php"]
 FILES += ["runtime.php", "index.php", "src/Cron.php", "src/Api/routes_cron.php", "bin/cron-http.php"]
+FILES += ["src/ServerUrls.php", "src/Merchant.php", "src/Api/routes_merchant.php"]
 
 
 def file_key():
