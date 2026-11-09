@@ -482,7 +482,7 @@ $router->get('/api/member/rank', function () {
 // ---- Withdrawals ----
 $router->get('/api/member/settings', function () {
     Auth::member();
-    $out = ['withdraw_min' => '500', 'withdraw_max' => '25000', 'withdraw_charge_pct' => '0', 'withdrawal_status' => '1',
+    $out = ['withdraw_min' => '500', 'withdraw_max' => '25000', 'withdraw_charge_pct' => '10', 'withdrawal_status' => '1',
         'profile_edit_status' => '1', 'transfer_status' => '0', 'transfer_min' => '10', 'transfer_max' => '25000',
         'recharge_status' => '0', 'recharge_min' => '10', 'recharge_max' => '5000'];
     foreach (DB::all('SELECT k, v FROM lo_settings') as $row) if (array_key_exists($row['k'], $out)) $out[$row['k']] = $row['v'];
@@ -581,6 +581,31 @@ $router->post('/api/member/activate-id', function () {
         return ['activation_code' => $code, 'life_id' => $to['life_id'], 'amount' => ACTIVE_ID_FEE];
     });
     Http::ok($out);
+});
+
+// ---- E wallet -> D wallet swap: 4% charge on the selected amount, the rest is added to the D wallet ----
+$router->post('/api/member/wallet-swap', function () {
+    $u = Auth::member();
+    $b = Http::body();
+    $uid = (int) $u['id'];
+    if (empty($u['transaction_password_hash'])) throw new HttpError('Set your transaction password first', 403);
+    if (!password_verify((string) ($b['transaction_password'] ?? ''), (string) $u['transaction_password_hash'])) throw new HttpError('Transaction password is incorrect', 403);
+    $amount = round((float) ($b['amount'] ?? 0), 3);
+    $out = DB::tx(function () use ($uid, $amount) {
+        DB::one('SELECT id FROM users WHERE id = ? FOR UPDATE', [$uid]);
+        [$charge, $credited] = \LifeOS\PanelPolicy::swap($amount, \LifeOS\Engine\Wallet::available($uid));
+        $code = 'SWP-' . strtoupper(bin2hex(random_bytes(8)));
+        DB::insert('INSERT INTO lo_wallet_swaps (swap_code, user_id, amount, charge, credited) VALUES (?,?,?,?,?)', [$code, $uid, $amount, $charge, $credited]);
+        DB::insert("INSERT INTO lo_deposits (deposit_code, user_id, kind, amount, note) VALUES (?,?,'E_SWAP',?,?)",
+            ['DEP-' . $code, $uid, $credited, 'E wallet swap ' . number_format($amount, 2, '.', '') . ' (4% charge ' . number_format($charge, 2, '.', '') . ')']);
+        return ['swap_code' => $code, 'amount' => $amount, 'charge' => $charge, 'credited' => $credited];
+    });
+    Http::ok($out);
+});
+
+$router->get('/api/member/wallet-swap', function () {
+    $u = Auth::member();
+    Http::ok(DB::all('SELECT swap_code, amount, charge, credited, created_at FROM lo_wallet_swaps WHERE user_id = ? ORDER BY id DESC LIMIT 200', [(int) $u['id']]));
 });
 
 // History: IDs I activated (sent) and activations paid for me (received), plus deposit additions.

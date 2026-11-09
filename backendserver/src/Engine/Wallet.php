@@ -20,7 +20,9 @@ final class Wallet
         if ($excludingWithdrawal !== null) { $sql .= ' AND id <> ?'; $params[] = $excludingWithdrawal; }
         // Pending and paid recharges hold the same balance a withdrawal would.
         $recharge = (float) DB::val("SELECT COALESCE(SUM(amount),0) FROM lo_recharges WHERE user_id = ? AND status IN ('PENDING','PAID')", [$userId]);
-        return round($earned - (float) DB::val($sql, $params) - $recharge, 6);
+        // Amounts swapped out of the E wallet into the D wallet (full amount incl. 4% charge).
+        $swapped = (float) DB::val('SELECT COALESCE(SUM(amount),0) FROM lo_wallet_swaps WHERE user_id = ?', [$userId]);
+        return round($earned - (float) DB::val($sql, $params) - $recharge - $swapped, 6);
     }
 
     /** Deposit wallet: admin deposits minus Active New ID payments. Only this wallet can activate IDs. */

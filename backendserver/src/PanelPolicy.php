@@ -8,6 +8,20 @@ final class PanelPolicy
     /** Mobile operators offered in the member recharge form. */
     public const RECHARGE_OPERATORS = ['GP' => 'GrameenPhone', 'BL' => 'Banglalink', 'RB' => 'Robi', 'AT' => 'Airtel', 'TT' => 'Teletalk'];
 
+    /** E wallet withdrawal charge (percent of requested amount, reserved on top). */
+    public const WITHDRAW_CHARGE_PCT = 10.0;
+    /** E wallet -> D wallet swap charge (percent of selected amount, deducted before crediting D wallet). */
+    public const SWAP_CHARGE_PCT = 4.0;
+
+    /** Returns [charge, credited] for an E->D swap of $amount. */
+    public static function swap(float $amount, float $available): array
+    {
+        if (!is_finite($amount) || $amount <= 0) throw new HttpError('Enter a valid amount');
+        if ($amount > $available + 1e-9) throw new HttpError('Insufficient E wallet balance', 422);
+        $charge = round($amount * self::SWAP_CHARGE_PCT / 100, 3);
+        return [$charge, round($amount - $charge, 3)];
+    }
+
     public static function enabled(mixed $value): bool { return $value === false || $value === null || (string) $value !== '0'; }
 
 
@@ -18,7 +32,7 @@ final class PanelPolicy
         $max = (float) ($settings['withdraw_max'] ?? 25000);
         if (!is_finite($amount) || $amount <= 0 || $amount < $min) throw new HttpError("Minimum withdrawal is $min");
         if ($max > 0 && $amount > $max) throw new HttpError("Maximum withdrawal is $max", 422);
-        $charge = round($amount * (float) ($settings['withdraw_charge_pct'] ?? 0) / 100, 3);
+        $charge = round($amount * self::WITHDRAW_CHARGE_PCT / 100, 3);
         if ($amount + $charge > $available) throw new HttpError('Insufficient withdrawable balance including charge', 422);
         return $charge;
     }
