@@ -1,0 +1,1 @@
+- E wallet = withdrawable earnings, D wallet = deposit ledger; E->D swaps are recorded in lo_wallet_swaps (debit E by full amount) plus an E_SWAP lo_deposits credit (amount minus charge), and charge percentages live as PanelPolicy constants so admin settings cannot change them.

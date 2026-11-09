@@ -274,7 +274,7 @@ check('All displayed extended profile fields persist', count(array_diff_assoc($p
 $s0 = api('GET', '/api/member/settings', null, $C['token'])['json']['data'];
 check('Transfer and recharge are off by default', ($s0['transfer_status'] ?? '') === '0' && ($s0['recharge_status'] ?? '') === '0', json_encode($s0));
 check('Disabled transfer is refused',
-    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => 10, 'password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 403);
+    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => 10, 'password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 410);
 check('Disabled recharge is refused',
     api('POST', '/api/member/recharges', ['operator' => 'GP', 'phone' => '01700000009', 'amount' => 10, 'password' => '1234'], $B['token'])['status'] === 403);
 api('POST', '/api/admin/settings', ['transfer_status' => '1', 'recharge_status' => '1'], $adminToken);
@@ -289,42 +289,42 @@ $wdB = (float) ($wB['withdrawable'] ?? 0);
 check('Service credit is the paid activation cashback', abs($svcC - 100.0) < 0.01, 'got ' . $svcC);
 check('Transfer blocked before a transaction password exists',
 
-    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => 50, 'password' => '1234', 'transaction_password' => '9999'], $C['token'])['status'] === 403);
+    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => 50, 'password' => '1234', 'transaction_password' => '9999'], $C['token'])['status'] === 410);
 check('Transaction password rejected with the wrong login password',
     api('POST', '/api/member/transaction-pin', ['current_password' => '9999', 'transaction_password' => '7777'], $C['token'])['status'] === 403);
 check('Transaction password saved',
     api('POST', '/api/member/transaction-pin', ['current_password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 200);
 check('Transfer blocked with a wrong transaction password',
-    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => 50, 'password' => '1234', 'transaction_password' => '0000'], $C['token'])['status'] === 403);
+    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => 50, 'password' => '1234', 'transaction_password' => '0000'], $C['token'])['status'] === 410);
 check('Transfer to own account rejected',
-    api('POST', '/api/member/transfers', ['receiver' => $C['life_id'], 'amount' => 10, 'password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 422);
+    api('POST', '/api/member/transfers', ['receiver' => $C['life_id'], 'amount' => 10, 'password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 410);
 check('Transfer above service balance rejected',
-    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => $svcC + 1, 'password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 422);
+    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => $svcC + 1, 'password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 410);
 
 check('Transfer below minimum 10 rejected',
-    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => 5, 'password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 400);
+    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => 5, 'password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 410);
 $t = api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => 50, 'password' => '1234', 'transaction_password' => '7777'], $C['token']);
-check('Transfer of 50 service credit accepted', $t['status'] === 200 && str_starts_with((string) ($t['json']['data']['transfer_code'] ?? ''), 'TRF-'), $t['raw']);
+check('Retired balance transfer returns Gone (Active New ID replaced it)', $t['status'] === 410, $t['raw']);
 $wc2 = api('GET', '/api/member/wallet', null, $C['token'])['json']['data'];
 $wb3 = api('GET', '/api/member/wallet', null, $B['token'])['json']['data'];
-check('Sender keeps service credit minus 50', abs(($wc2['service_balance'] ?? 0) - ($svcC - 50.0)) < 0.01, 'got ' . ($wc2['service_balance'] ?? 'null'));
-check('Receiver gains 50 service credit', abs(($wb3['service_balance'] ?? 0) - ($svcB + 50.0)) < 0.01, 'got ' . ($wb3['service_balance'] ?? 'null'));
+check('Sender service credit unchanged', abs(($wc2['service_balance'] ?? 0) - $svcC) < 0.01, 'got ' . ($wc2['service_balance'] ?? 'null'));
+check('Receiver service credit unchanged', abs(($wb3['service_balance'] ?? 0) - $svcB) < 0.01, 'got ' . ($wb3['service_balance'] ?? 'null'));
 check('Transfer never moves withdrawable funds', abs(($wc2['withdrawable'] ?? 0) - $wdC) < 0.01 && abs(($wb3['withdrawable'] ?? 0) - $wdB) < 0.01,
     'c=' . ($wc2['withdrawable'] ?? 'null') . ' b=' . ($wb3['withdrawable'] ?? 'null'));
 
 $out = api('GET', '/api/member/transfers/out', null, $C['token'])['json']['data'];
 $in = api('GET', '/api/member/transfers/in', null, $B['token'])['json']['data'];
-check('Transfer report lists the sent row', count($out) === 1 && ($out[0]['life_id'] ?? '') === $B['life_id'], json_encode($out));
-check('Receive report lists the received row', count($in) === 1 && abs((float) ($in[0]['amount'] ?? 0) - 50.0) < 0.01, json_encode($in));
+check('No transfer row is created', count($out) === 0, json_encode($out));
+check('No received transfer row is created', count($in) === 0, json_encode($in));
 check('Transfer report honours the date range',
     count(api('GET', '/api/member/transfers/out?date_from=2030-01-01', null, $C['token'])['json']['data'] ?? []) === 0
     && api('GET', '/api/member/transfers/out?date_from=bad', null, $C['token'])['status'] === 422);
-check('Admin transfer audit trail lists the row',
+check('Admin transfer audit has no new row',
     count(array_filter(api('GET', '/api/admin/transfers', null, $adminToken)['json']['data'] ?? [],
-        fn ($x) => (string) $x['from_life_id'] === $C['life_id'] && (string) $x['to_life_id'] === $B['life_id'])) === 1);
+        fn ($x) => (string) $x['from_life_id'] === $C['life_id'] && (string) $x['to_life_id'] === $B['life_id'])) === 0);
 api('POST', '/api/admin/settings', ['transfer_status' => '0'], $adminToken);
 check('Transfer switch blocks requests',
-    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => 10, 'password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 403);
+    api('POST', '/api/member/transfers', ['receiver' => $B['life_id'], 'amount' => 10, 'password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 410);
 api('POST', '/api/admin/settings', ['transfer_status' => '1'], $adminToken);
 
 // ---- Mobile recharge: holds the member balance until admin releases it ----
