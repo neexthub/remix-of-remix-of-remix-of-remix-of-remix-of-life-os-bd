@@ -59,7 +59,6 @@ function Tree() {
     select(el).call(behavior.transform, zoomIdentity.translate((el.clientWidth - currentLayout.width * k) / 2, 24).scale(k));
   };
   useEffect(() => { if (currentLayout.nodes.length) fit(); }, [currentLayout]);
-  useEffect(() => { if (!q.data) return; }, [q.data]);
 
   useEffect(() => {
     const el = canvas.current;
