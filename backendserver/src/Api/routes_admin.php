@@ -357,6 +357,24 @@ $router->get('/api/admin/ledger', function () {
         FROM lo_ledger l JOIN users u ON u.id = l.user_id' . $where . ' ORDER BY l.id DESC LIMIT 1000', $p));
 });
 
+// Balance Add report: every admin-made addition (D Wallet ADMIN_ADD deposits and E Wallet ADJ- ledger rows), newest first.
+$router->get('/api/admin/balance-add', function () {
+    Auth::admin();
+    [$where, $p] = adminFilters('t.created_at');
+    $wallet = (string) ($_GET['wallet'] ?? '');
+    if ($wallet !== '') {
+        if (!in_array($wallet, ['DEPOSIT', 'ADJUSTMENT'], true)) throw new HttpError('Invalid wallet', 422);
+        $where .= ($where ? ' AND' : ' WHERE') . ' t.wallet = ?'; $p[] = $wallet;
+    }
+    $rows = DB::all("SELECT t.trx_code, t.wallet, t.amount, t.note, t.created_at, u.life_id, u.phone, " . ADMIN_NAME_SQL . " AS name
+        FROM (
+            SELECT d.deposit_code AS trx_code, 'DEPOSIT' AS wallet, d.amount, d.note, d.created_at, d.user_id FROM lo_deposits d WHERE d.kind = 'ADMIN_ADD'
+            UNION ALL
+            SELECT l.payout_code AS trx_code, 'ADJUSTMENT' AS wallet, l.amount, l.note, l.created_at, l.user_id FROM lo_ledger l WHERE l.ledger_type = 'ADJUSTMENT' AND l.payout_code LIKE 'ADJ-%'
+        ) t JOIN users u ON u.id = t.user_id" . $where . ' ORDER BY t.created_at DESC, t.trx_code DESC LIMIT 1000', $p);
+    Http::ok($rows);
+});
+
 // Balance Add: credits a member through an audited ADJUSTMENT ledger row (never edits balances directly).
 $router->post('/api/admin/balance-add', function () {
     $admin = Auth::admin();
