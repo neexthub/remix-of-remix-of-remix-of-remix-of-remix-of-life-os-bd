@@ -116,7 +116,7 @@
 .neel .lo-status { background: var(--lo-blue); margin: 10px auto; width: 320px; padding: 10px; }
 .neel .lo-status h2 { text-align: center; color: #fff; }
 .neel .lo-status h4 { margin: 5px 0 8px 0; font-weight: 900; font-size: 24px; font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif; color: var(--lo-yellow); }
-.neel .lo-status .lo-rank { text-align: center; color: #fff; margin: 0 0 4px 0; font-size: 16px; }
+.neel .lo-status .lo-rank { text-align: center; color: #fff; margin: 0 0 4px 0; font-size: 20px; }
 .neel .lo-status .lo-rank b { color: var(--lo-yellow); }
 .neel .lo-share { background: var(--lo-share); padding: 10px; }
 .neel .lo-share p { font-size: 16px; color: #fff; }
