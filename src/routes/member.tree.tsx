@@ -97,7 +97,15 @@ function Tree() {
     catch (e) { setMessage((e as Error).message); }
     finally { setBusy(false); }
   };
-  const changeZoom = (factor: number) => { if (box.current && controller.current) select(box.current).call(controller.current.scaleBy, factor); };
+  // Buttons zoom toward the top member when it is on screen (the full map is mostly empty space elsewhere).
+  const changeZoom = (factor: number) => {
+    const el = box.current, behavior = controller.current;
+    if (!el || !behavior) return;
+    const top = currentLayout.byId.get(centerId);
+    const px = top ? view.x + top.x * view.k : NaN, py = top ? view.y + top.y * view.k : NaN;
+    const onScreen = px >= 0 && px <= el.clientWidth && py >= 0 && py <= el.clientHeight;
+    select(el).call(behavior.scaleBy, factor, onScreen ? [px, py] : [el.clientWidth / 2, el.clientHeight / 2]);
+  };
   const find = () => {
     const value = search.trim().toLowerCase();
     const n = layout.nodes.find((n) => n.row[1].toLowerCase() === value || String(n.row[0]) === value)
