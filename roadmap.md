@@ -146,3 +146,8 @@
 # Binary tree full view (2026-11-12)
 - [x] Whole tree in a scrollable box with zoom (+/−, Full tree, 100%, pinch, Ctrl+wheel); name + ID under every member; "Show more" loads deeper levels; search opens any ID in own downline (server-checked). Local API suite 138/0; browser-checked phone + desktop with sample data.
 - [ ] Push to live lifeosbd.com — waiting for the user's go-ahead from this remix.
+
+# Labels + status (2026-11-12)
+- [ ] Dashboard ID STATUS box shows activation status + rank.
+- [ ] Rename "Lifetime Matchings" -> "Total Matching"; remove Referral Code; "Package Activation" -> "ID Active"; "Username" -> "Account ID" everywhere.
+- [ ] Push all pending work (tree, balance add report, auto username, these labels) to live lifeosbd.com and verify.
