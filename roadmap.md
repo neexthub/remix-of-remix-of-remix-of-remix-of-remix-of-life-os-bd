@@ -1,6 +1,6 @@
 # Restore legacy Left–Right total points
-- [ ] Trace imported legacy points through tree API and member UI; restore accurate Left–Right totals and test the fix.
-- [ ] Use the supplied cPanel access to push the completed update live and verify it in the browser without exposing credentials.
+- [x] Trace imported legacy points through tree API and member UI; restore accurate Left–Right totals and test the fix (local API 123/123, frontend 12/12, PHP lint and build pass).
+- [x] Deploy backend/frontend through the supplied cPanel access without exposing credentials; live isolated QA API returned Left 2000 / Right 1000, deployed JS contains Tree/Statistics labels, and all three QA users plus temporary files were removed. No existing member funds or financial settings changed.
 
 # Remove admin demo and rebuild four downloads
 - [x] Remove all admin demo credentials, shortcut login and simulated admin API; invalidate old demo sessions.
