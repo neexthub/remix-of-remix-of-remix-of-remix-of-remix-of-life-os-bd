@@ -31,16 +31,15 @@ function Dashboard() {
   const totalOut = Number(w?.withdrawn ?? 0) + Number(w?.pending_withdrawal ?? 0);
 
   const info: [string, ReactNode][] = [
-    ["Account Username", me.life_id],
+    ["Account ID", me.life_id],
     ["Account Full Name", me.name],
     ["Email Address", me.email ?? "N/A"],
     ["Cell Number", me.phone],
     ["Joining Date Time", me.created_at],
     ["Account Status", me.status],
-    ["Referral Code", me.referral_code],
     ["Refer ID", me.referred_by ?? "N/A"],
     ["Total Referral", me.total_referral],
-    ["Lifetime Matchings", rank?.lifetime_matchings ?? 0],
+    ["Total Matching", rank?.lifetime_matchings ?? 0],
   ];
   const photo = profile?.photo_base64;
 
@@ -96,6 +95,7 @@ function Dashboard() {
               <div className="div_block lo-status">
                 <h2>ID STATUS</h2>
                 <h4 className={w?.id_active ? undefined : "lo-inactive"} style={{ textAlign: "center" }}>{w ? (w.id_active ? "Activated" : "Not Active") : "…"}</h4>
+                <p className="lo-rank">Rank: <b>{rank ? (rank.current?.name ?? "No Rank Yet") : "…"}</b></p>
               </div>
               <div className="lo-wallets">
                 {([

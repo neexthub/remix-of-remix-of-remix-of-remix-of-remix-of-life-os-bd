@@ -58,7 +58,7 @@ function Login() {
           <table width={240} cellPadding={5} cellSpacing={5}>
             <tbody>
               <tr><td align="center"><Link to="/" aria-label="Life OS home"><img src="/member-kit/neel/logo-word.png" alt="Life OS" style={{ height: 60, width: "auto" }} /></Link></td></tr>
-              <tr><td><input type="text" name="username" aria-label="Account Login User ID" placeholder="Account Login User ID" required autoComplete="username" /></td></tr>
+              <tr><td><input type="text" name="username" aria-label="Account ID" placeholder="Account ID" required autoComplete="username" /></td></tr>
               <tr><td><input type="password" name="password" aria-label="Account Login Password" placeholder="Account Login Password" required autoComplete="current-password" /></td></tr>
               <tr><td><input ref={codeInput} type="text" name="security_code" aria-label="Login Capcha Code" placeholder="Login Capcha Code" required pattern="[0-9]{4}" maxLength={4} inputMode="numeric" /></td></tr>
               <tr>

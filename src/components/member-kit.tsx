@@ -22,7 +22,7 @@ const MENU: { label: string; items: { to: string; label: string }[] }[] = [
       { to: "/member/enrollment", label: "Enrollment" },
       { to: "/member/sponsors", label: "Sponsors List" },
       { to: "/member/statistics", label: "Statistics View" },
-      { to: "/member/activation", label: "Package Activation" },
+      { to: "/member/activation", label: "ID Active" },
     ],
   },
   {

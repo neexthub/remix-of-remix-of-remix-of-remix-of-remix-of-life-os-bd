@@ -42,7 +42,7 @@ function Join() {
     setUnameErr("");
     memberApi<{ username: string; username_token: string }>("/username/new")
       .then(u => { if (active) setUname(u); })
-      .catch(() => { if (active) setUnameErr("Unable to generate a username. Please try again."); });
+      .catch(() => { if (active) setUnameErr("Unable to generate an Account ID. Please try again."); });
     return () => { active = false; };
   }, [unameTry]);
   useEffect(() => { setTeam(linkTeam); }, [linkTeam, ref]);
@@ -112,7 +112,7 @@ function Join() {
             {row("Sponsor/Referral ID", "sponsor", <input id="sponsor" type="text" value={sponsor?.life_id ?? ref ?? ""} readOnly />, true)}
             {row("Placement UserID", "placement", <input id="placement" type="text" value={sponsor?.placement_life_id ?? ""} readOnly />, true)}
             {row("Choose Option", "team-l", <><input id="team-l" type="radio" name="team" value="L" checked={team === "L"} disabled={!!linkTeam} required onChange={() => setTeam("L")} /> <label htmlFor="team-l" style={{ display: "inline" }}>Left Team</label> <input id="team-r" type="radio" name="team" value="R" style={{ marginLeft: 20 }} checked={team === "R"} disabled={!!linkTeam} required onChange={() => setTeam("R")} /> <label htmlFor="team-r" style={{ display: "inline" }}>Right Team</label></>, true)}
-            {row("Username (auto)", "username", <>
+            {row("Account ID (auto)", "username", <>
               <input id="username" type="text" value={uname?.username ?? (unameErr ? "" : "Generating…")} readOnly aria-readonly="true" tabIndex={-1} style={{ background: "#eee", cursor: "not-allowed" }} />
               {unameErr && <div className="error" role="alert">{unameErr} <button type="button" onClick={() => setUnameTry(n => n + 1)}>Retry</button></div>}
             </>, true)}

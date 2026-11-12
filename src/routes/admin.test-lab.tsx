@@ -56,7 +56,7 @@ function TestLab() {
     try {
       const r = await run("create", (run_id) => adminApi<{ created: number; usernames: string; password: string; logins: Login[] }>("/test-lab/seed", { method: "POST", body: { run_id } }));
       setLogins(r.logins);
-      setMsg(`${r.created} paid test members created (usernames ${r.usernames}, password ${r.password}). Nothing settled yet — press Run 1 Day.`);
+      setMsg(`${r.created} paid test members created (Account IDs ${r.usernames}, password ${r.password}). Nothing settled yet — press Run 1 Day.`);
       await q.refetch();
     } catch (e) { setMsg((e as Error).message); }
   };
@@ -102,14 +102,14 @@ function TestLab() {
       {s.ranks && <div className="flex flex-wrap gap-6">
         <table className="border border-border text-sm"><thead><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Rank</th><th className="p-1 text-right">Needs matchings</th><th className="p-1 text-right">Achieved</th></tr></thead>
           <tbody>{s.ranks.map((r) => <tr key={r.name} className="border-t border-border"><td className="p-1">{r.name}</td><td className="p-1 text-right">{Number(r.required_matchings).toLocaleString("en-IN")}</td><td className="p-1 text-right">{r.achieved}</td></tr>)}</tbody></table>
-        {s.top_matchings && <table className="border border-border text-sm"><thead><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Top member</th><th className="p-1 text-left">Life ID</th><th className="p-1 text-right">Lifetime matchings</th></tr></thead>
+        {s.top_matchings && <table className="border border-border text-sm"><thead><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Top member</th><th className="p-1 text-left">Life ID</th><th className="p-1 text-right">Total matching</th></tr></thead>
           <tbody>{s.top_matchings.map((t) => <tr key={t.life_id} className="border-t border-border"><td className="p-1">{t.username ?? "ROOT"}</td><td className="p-1">{t.life_id}</td><td className="p-1 text-right">{t.lifetime_matchings}</td></tr>)}</tbody></table>}
       </div>}
       {s.daily.length > 0 && <table className="w-full border border-border text-xs"><thead><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Settled date</th><th className="p-1 text-right">Sales</th><th className="p-1 text-right">Cashback</th><th className="p-1 text-right">Referral</th><th className="p-1 text-right">Generation</th><th className="p-1 text-right">Matching</th></tr></thead>
         <tbody>{s.daily.map((d) => <tr key={d.day} className="border-t border-border"><td className="p-1">{d.day}</td><td className="p-1 text-right">{d.sales}</td><td className="p-1 text-right">{tk(Number(d.cashback))}</td><td className="p-1 text-right">{tk(Number(d.referral))}</td><td className="p-1 text-right">{tk(Number(d.generation))}</td><td className="p-1 text-right">{tk(Number(d.matching))}</td></tr>)}</tbody></table>}
       {logins && <div className="space-y-2">
         <h3 className="font-bold">Member Login Info — password for every test member: <span className="font-mono">test1234</span></h3>
-        <div className="max-h-96 overflow-auto"><table className="w-full border border-border text-xs"><thead className="sticky top-0"><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Username</th><th className="p-1 text-left">Password</th><th className="p-1 text-left">Life ID</th><th className="p-1 text-left">Name</th><th className="p-1 text-left">Sponsor</th><th className="p-1 text-left">Side</th><th className="p-1 text-left">Settled</th></tr></thead>
+        <div className="max-h-96 overflow-auto"><table className="w-full border border-border text-xs"><thead className="sticky top-0"><tr className="bg-primary text-primary-foreground"><th className="p-1 text-left">Account ID</th><th className="p-1 text-left">Password</th><th className="p-1 text-left">Life ID</th><th className="p-1 text-left">Name</th><th className="p-1 text-left">Sponsor</th><th className="p-1 text-left">Side</th><th className="p-1 text-left">Settled</th></tr></thead>
           <tbody>{logins.map((m) => <tr key={m.life_id} className="border-t border-border"><td className="p-1 font-mono">{m.username}</td><td className="p-1 font-mono">test1234</td><td className="p-1">{m.life_id}</td><td className="p-1">{m.name}</td><td className="p-1">{m.sponsor}</td><td className="p-1">{m.side}</td><td className="p-1">{Number(m.settled) ? "Yes" : "No"}</td></tr>)}</tbody></table></div>
       </div>}
     </div>}

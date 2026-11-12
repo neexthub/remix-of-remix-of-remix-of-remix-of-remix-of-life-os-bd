@@ -14,7 +14,7 @@ function Report() {
   const q = useMember<Row[]>("activate-id-history", "/activate-id/history");
   const [range, setRange] = useState({ from: "", to: "" });
   const rows = (q.data ?? []).filter((r) => inRange(r.created_at, range));
-  const label = (r: Row) => r.kind === "ADMIN_ADD" ? "Deposit Added" : r.direction === "SENT" ? `Activated ${r.to_life_id}` : `Package activated by ${r.from_life_id}`;
+  const label = (r: Row) => r.kind === "ADMIN_ADD" ? "Deposit Added" : r.direction === "SENT" ? `Activated ${r.to_life_id}` : `ID activated by ${r.from_life_id}`;
   return (
     <Page title="Active ID History">
       <Msg text={q.error ? (q.error as Error).message : null} />
