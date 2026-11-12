@@ -168,3 +168,6 @@
 - [x] Actual browser Admin login with requested password succeeds. Real member matching is now 8,596 (previously 0), active + new rank present; desktop/mobile tree zoom/fit and expansion pass; all 1,781 loaded enrollment edges sponsor-only. Every member balance is zero because every D/E/cashback source table is empty, not just stored wallet columns.
 - [x] Successful setup confirmation deletion clicked; cPanel staging folder and upload removed. Old URL returns SPA fallback 200, not installer; response contains no setup page. No testing accounts created.
 - [ ] Entire network overview remains unimplemented: current binary UI loads deeper branches via Show more, not all 72,824 nodes simultaneously. Live full-data comparisons of rank map and sponsor/placement anomalies require further checks; no claim of exact old-tree parity.
+
+# Tree blank on phone (2026-11-12)
+- [x] Cause: phone kept 7-day cached old member stylesheet. Member-kit CSS/images now load with a content-hash version, tree box has inline critical layout, live index.html sent no-cache. Deployed and checked live as LO64595765 and LID-2026-937CCC at phone size with a simulated stale cache.

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { memberApi } from "@/lib/member-api";
 import { layoutBinary, subtreeTotals, visibleMembers, type TreeRow, type PositionedMember } from "@/lib/binary-layout";
+import { memberKitAsset } from "@/lib/member-kit-assets";
 
 export const Route = createFileRoute("/member/tree")({
   head: () => ({ meta: [{ title: "Full Binary Tree — Life OS Member" }, { name: "description", content: "Your complete Life OS binary team, member details and active team totals." }, { property: "og:title", content: "Full Binary Tree — Life OS Member" }, { property: "og:description", content: "Your complete Life OS binary team, member details and active team totals." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -126,15 +127,15 @@ function Tree() {
       </div>
     </div>
     {q.data ? (() => { const t = totals.get(centerId); return <div className="bt-summary" aria-live="polite">{integer(t?.all ?? 0)} Members <span>{mode === "full" ? "Full tree — zoom in to see names" : `Showing ${NEAR_LEVELS} levels — tap an ID to go deeper`}</span><span>Active {integer(t?.active ?? 0)}</span></div>; })() : <div className="bt-summary" role="status">Loading full tree…</div>}
-    <div ref={box} className="bt-surface" role="region" aria-label="Full binary tree" tabIndex={0} onKeyDown={(e) => {
+    <div ref={box} className="bt-surface" style={{ position: "relative", height: 760, width: "100%", overflow: "hidden", touchAction: "none" }} role="region" aria-label="Full binary tree" tabIndex={0} onKeyDown={(e) => {
       if (!box.current || !controller.current) return;
       const move: Record<string, [number, number]> = { ArrowLeft: [100 / view.k, 0], ArrowRight: [-100 / view.k, 0], ArrowUp: [0, 100 / view.k], ArrowDown: [0, -100 / view.k] };
       const delta = move[e.key];
       if (delta) { e.preventDefault(); select(box.current).call(controller.current.translateBy, delta[0], delta[1]); }
     }}>
-      <canvas ref={canvas} className="bt-canvas" aria-hidden="true" />
-      {shown.map((n) => <div key={n.row[0]} className={`bt-member ${n.row[3] ? "bt-active" : "bt-inactive"}`} style={{ transform: `translate(${view.x + n.x * view.k}px, ${view.y + n.y * view.k}px) scale(${view.k})` }}>
-        <Button variant="reference" size="reference" aria-label={`Details for ${n.row[1]}`} className="lo-tree-control" onClick={() => void pick(n)}><img src="/member-kit/neel/blank.png" alt="" /></Button>
+      <canvas ref={canvas} className="bt-canvas" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} aria-hidden="true" />
+      {shown.map((n) => <div key={n.row[0]} className={`bt-member ${n.row[3] ? "bt-active" : "bt-inactive"}`} style={{ position: "absolute", top: 0, left: 0, width: 120, margin: "-38px 0 0 -60px", transformOrigin: "60px 38px", display: "flex", flexDirection: "column", alignItems: "center", transform: `translate(${view.x + n.x * view.k}px, ${view.y + n.y * view.k}px) scale(${view.k})` }}>
+        <Button variant="reference" size="reference" aria-label={`Details for ${n.row[1]}`} className="lo-tree-control" onClick={() => void pick(n)}><img src={memberKitAsset("/member-kit/neel/blank.png")} alt="" width={56} height={60} /></Button>
         <span className="bt-name" title={n.row[2] ?? ""}>{n.row[2] || "—"}</span>
         <Button variant="reference" size="reference" className="bt-id" onClick={() => openBranch(n)}>ID: {n.row[1]}</Button>
         {n.hiddenBelow > 0 && mode === "near" && <Button variant="reference" size="reference" className="bt-below" onClick={() => openBranch(n)}>▼ {integer(n.hiddenBelow)} below</Button>}

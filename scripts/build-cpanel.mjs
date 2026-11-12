@@ -52,6 +52,11 @@ RewriteRule ^ - [L]
 RewriteRule ^(?:assets|member-kit)(?:/|$) - [L]
 RewriteRule ^ index.html [L]
 </IfModule>
+<IfModule mod_headers.c>
+<FilesMatch "^index\\.html$">
+Header set Cache-Control "no-cache"
+</FilesMatch>
+</IfModule>
 `);
   console.log(`cPanel upload files: ${output}; API: current domain/backendserver/api`);
 }

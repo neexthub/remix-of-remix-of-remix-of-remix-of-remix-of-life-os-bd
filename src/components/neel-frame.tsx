@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useCanvasScale } from "@/components/member-kit";
+import { NEEL_CSS_HREF } from "@/lib/member-kit-assets";
 
 export const NEEL_LINKS = [
-  { rel: "stylesheet", href: "/member-kit/neel.css" },
+  { rel: "stylesheet", href: NEEL_CSS_HREF },
 ];
 
 /** Public (signed-out) pages in the member-panel look: same banner, blue menu bar, footer and whole-canvas scaling. */

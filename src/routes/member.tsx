@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { MemberShell } from "@/components/member-kit";
+import { NEEL_CSS_HREF } from "@/lib/member-kit-assets";
 
 export const Route = createFileRoute("/member")({
   head: () => ({
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/member")({
       { name: "twitter:card", content: "summary" },
     ],
     links: [
-      { rel: "stylesheet", href: "/member-kit/neel.css" },
+      { rel: "stylesheet", href: NEEL_CSS_HREF },
     ],
   }),
   ssr: false,

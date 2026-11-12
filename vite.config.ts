@@ -4,7 +4,24 @@
 //     nitro (build-only using cloudflare as a default target), VITE_* env injection, @ path alias,
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
+import { createHash } from "node:crypto";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+
+// Content hash of public/member-kit: appended to its URLs so a deploy busts long-lived browser caches.
+function memberKitVersion(): string {
+  const hash = createHash("sha256");
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else hash.update(full).update(readFileSync(full));
+    }
+  };
+  try { walk("public/member-kit"); } catch { return "dev"; }
+  return hash.digest("hex").slice(0, 10);
+}
 
 const isCpanelBuild = process.env["LIFE_OS_TARGET"] === "cpanel";
 const isNetlifyBuild = process.env["LIFE_OS_TARGET"] === "netlify";
@@ -14,7 +31,10 @@ const cpanelRouterBasePath = cpanelBasePath.replace(/\/$/, "") || "/";
 export default defineConfig({
   vite: {
     base: isCpanelBuild ? cpanelBasePath : "/",
-    ...(isCpanelBuild ? { define: { 'import.meta.env.VITE_LIFEOS_API_URL': JSON.stringify('/backendserver/api') } } : {}),
+    define: {
+      'import.meta.env.VITE_MEMBER_KIT_VERSION': JSON.stringify(memberKitVersion()),
+      ...(isCpanelBuild ? { 'import.meta.env.VITE_LIFEOS_API_URL': JSON.stringify('/backendserver/api') } : {}),
+    },
     server: {
       proxy: {
         "/backendserver/api": {
