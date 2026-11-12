@@ -138,11 +138,10 @@ function Tree() {
     requestAnimationFrame(() => { el.scrollTop = 0; el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2; });
   };
 
-  // Centre the top member horizontally whenever a new tree is shown.
+  // Whenever a new tree is shown, start with the whole tree in view (zoom in with + or pinch).
   useEffect(() => {
-    const el = box.current;
-    if (!el || !top) return;
-    requestAnimationFrame(() => { el.scrollTop = 0; el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2; });
+    if (!top) return;
+    requestAnimationFrame(fit);
   }, [top?.life_id, q.dataUpdatedAt]);
 
   // Ctrl + wheel and trackpad pinch zoom the tree (not the page); two-finger pinch on touch screens.
