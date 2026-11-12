@@ -407,6 +407,27 @@ check('C loses exactly referral 200 + generation 50 on refund', abs(($cWalletBef
 check('no PAID matching events remain after refund', (int) DB::val('SELECT COUNT(*) FROM lo_matching_events WHERE activation_id = ? AND payout_status = "PAID"', [$jAct]) === 0);
 check('refunded member deactivated', (int) DB::val('SELECT is_active FROM lo_tree WHERE user_id = ?', [$J['id']]) === 0);
 
+// ---- Active New ID: live ID lookup and instant package activation (no approval or hold) ----
+$rn = api('POST', '/api/member/register', ['phone' => '01700000099', 'pin' => '1234', 'name' => 'Instant N', 'referral_code' => $C['referral_code'], 'accepted_terms' => 1]);
+$N = ['token' => $rn['json']['data']['token'] ?? '', 'id' => (int) ($rn['json']['data']['user_id'] ?? 0), 'life_id' => (string) ($rn['json']['data']['life_id'] ?? '')];
+api('POST', '/api/member/activations', [], $N['token']); // an old unpaid gateway request must not block or double up
+DB::insert("INSERT INTO lo_deposits (deposit_code, user_id, kind, amount, note) VALUES (?,?,'ADMIN_ADD',1000,'test D wallet')", ['TST-D-' . $C['id'], $C['id']]);
+$lk = api('GET', '/api/member/activate-id/lookup?id=' . rawurlencode($N['life_id']), null, $C['token']);
+check('Lookup shows name and ID while typing', $lk['status'] === 200 && ($lk['json']['data']['name'] ?? '') === 'Instant N' && ($lk['json']['data']['life_id'] ?? '') === $N['life_id'] && ($lk['json']['data']['active'] ?? true) === false, $lk['raw']);
+check('Lookup never returns phone or wallet data', !array_key_exists('phone', $lk['json']['data'] ?? []) && !array_key_exists('withdrawable', $lk['json']['data'] ?? []));
+check('Lookup requires a signed-in member', api('GET', '/api/member/activate-id/lookup?id=' . rawurlencode($N['life_id']))['status'] === 401);
+check('Lookup of unknown ID is 404', api('GET', '/api/member/activate-id/lookup?id=NOPE-XYZ', null, $C['token'])['status'] === 404);
+$ra = api('POST', '/api/member/activate-id', ['receiver' => $N['life_id'], 'password' => '1234', 'transaction_password' => '7777'], $C['token']);
+check('Active New ID succeeds', $ra['status'] === 200 && ($ra['json']['data']['status'] ?? '') === 'ACTIVE', $ra['raw']);
+check('New ID package is active immediately (no hold)', (int) DB::val('SELECT is_active FROM lo_tree WHERE user_id = ?', [$N['id']]) === 1);
+check('Member dashboard shows Activated at once', (api('GET', '/api/member/wallet', null, $N['token'])['json']['data']['id_active'] ?? false) === true);
+check('Old unpaid gateway request cancelled', (int) DB::val("SELECT COUNT(*) FROM lo_activations WHERE user_id = ? AND payment_status = 'PENDING'", [$N['id']]) === 0);
+check('Lookup now reports Already Active', (api('GET', '/api/member/activate-id/lookup?id=' . rawurlencode($N['life_id']), null, $C['token'])['json']['data']['active'] ?? false) === true);
+check('Same ID cannot be activated twice', api('POST', '/api/member/activate-id', ['receiver' => $N['life_id'], 'password' => '1234', 'transaction_password' => '7777'], $C['token'])['status'] === 409);
+$nAct = (int) DB::val("SELECT id FROM lo_activations WHERE user_id = ? AND payment_status = 'SUCCESS'", [$N['id']]);
+api('POST', "/api/admin/activations/$nAct/confirm", ['status' => 'REFUNDED', 'payment_ref' => 'TRX-refund-N'], $adminToken);
+check('Refund before settlement turns the instant package off', (int) DB::val('SELECT is_active FROM lo_tree WHERE user_id = ?', [$N['id']]) === 0);
+
 // ---- Master Worker API ----
 $r = master('GET', '/api/master/ping');
 check('master ping ok', $r['status'] === 200 && ($r['json']['ok'] ?? false), json_encode($r['json']));
