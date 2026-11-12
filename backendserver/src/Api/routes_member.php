@@ -249,12 +249,22 @@ $router->get('/api/member/tree/binary', function () {
         $seen[$id] = true; $order[] = $id;
         foreach ($children[$id] ?? [] as $c) if ($c !== null) $stack[] = $c;
     }
+    // Sum every successful activation's BV, including already-settled legacy imports. These lifetime
+    // leg points are read-only totals; they never create volume, commission or a new financial liability.
+    $ownPoints = [];
+    foreach (array_chunk($order, 500) as $chunk) {
+        $marks = implode(',', array_fill(0, count($chunk), '?'));
+        $rows = DB::all("SELECT user_id, SUM(bv) AS points FROM lo_activations WHERE payment_status = 'SUCCESS' AND user_id IN ($marks) GROUP BY user_id", $chunk);
+        foreach ($rows as $row) $ownPoints[(int) $row['user_id']] = (float) $row['points'];
+    }
     $size = [];
+    $points = [];
     foreach (array_reverse($order) as $id) {
         [$l, $r] = $children[$id] ?? [null, null];
         $size[$id] = 1 + ($l !== null ? ($size[$l] ?? 0) : 0) + ($r !== null ? ($size[$r] ?? 0) : 0);
+        $points[$id] = ($ownPoints[$id] ?? 0.0) + ($l !== null ? ($points[$l] ?? 0.0) : 0.0) + ($r !== null ? ($points[$r] ?? 0.0) : 0.0);
     }
-    $build = function (int $id, int $depth) use (&$build, $size): ?array {
+    $build = function (int $id, int $depth) use (&$build, $size, $points): ?array {
         if ($depth > 6) return null;
         $n = DB::one(
             "SELECT t.*, u.life_id, u.phone,
@@ -274,6 +284,8 @@ $router->get('/api/member/tree/binary', function () {
             'purchased' => (float) $n['purchased'],
             'left_total' => $l !== null ? ($size[$l] ?? 0) : 0,
             'right_total' => $r !== null ? ($size[$r] ?? 0) : 0,
+            'left_points' => $l !== null ? ($points[$l] ?? 0.0) : 0.0,
+            'right_points' => $r !== null ? ($points[$r] ?? 0.0) : 0.0,
             'matched' => (int) $n['lifetime_matchings'],
             'active' => (bool) $n['is_active'],
             'left_carry' => (float) $n['left_carry'],

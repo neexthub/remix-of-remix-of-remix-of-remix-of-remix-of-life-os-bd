@@ -197,6 +197,8 @@ check('rank reward cannot overdraw RANK pool', $r['status'] === 422, (string) $r
 // ---- Enrollment tree ----
 $et = api('GET', '/api/member/tree/enrollment', null, $B['token'])['json']['data'];
 check('B has 2 directs (C, D)', count($et['directs'] ?? []) === 2, 'got ' . count($et['directs'] ?? []));
+// Imported activations are already settled but their historical BV must remain visible in leg totals.
+DB::run("INSERT INTO lo_activations (activation_code, user_id, payment_ref, payment_status, fee, bv, processed, processed_at) VALUES ('LEGACY-C-POINTS', ?, 'LEGACY-C-POINTS', 'SUCCESS', 1000, 1000, 1, CURRENT_TIMESTAMP)", [$C['id']]);
 $bt = api('GET', '/api/member/tree/binary', null, $B['token'])['json']['data'];
 check('B binary has C left and D right', ($bt['left']['life_id'] ?? '') === $C['life_id'] && ($bt['right']['life_id'] ?? '') === $D['life_id'], json_encode([$bt['left']['life_id'] ?? null, $bt['right']['life_id'] ?? null]));
 // Tree info box: leg totals count every placed member below each side, and C/D show B as sponsor.
@@ -204,6 +206,9 @@ $countLeg = function (?array $n) use (&$countLeg): int { return $n ? 1 + $countL
 check('Tree info box leg totals match the placed members',
     ($bt['left_total'] ?? -1) === $countLeg($bt['left'] ?? null) && ($bt['right_total'] ?? -1) === $countLeg($bt['right'] ?? null) && $bt['left_total'] >= 1 && $bt['right_total'] >= 1,
     json_encode([$bt['left_total'] ?? null, $bt['right_total'] ?? null]));
+check('Tree info box includes lifetime Left and Right BV points from successful activations',
+    (float) ($bt['left_points'] ?? -1) === 2000.0 && (float) ($bt['right_points'] ?? -1) === 1000.0,
+    json_encode([$bt['left_points'] ?? null, $bt['right_points'] ?? null]));
 check('Tree info box shows the sponsor of each member', ($bt['left']['sponsor_life_id'] ?? '') === $B['life_id'] && ($bt['right']['sponsor_life_id'] ?? '') === $B['life_id']);
 
 // ---- Daily matching cap: force C's used cap to 4999, then a match pays 1 taka ----

@@ -6,7 +6,7 @@ export const Route = createFileRoute("/member/statistics")({
   component: Stats,
 });
 
-type Node = { active: boolean; left_carry: number; right_carry: number; left: Node | null; right: Node | null };
+type Node = { active: boolean; left_carry: number; right_carry: number; left_points?: number; right_points?: number; left: Node | null; right: Node | null };
 const count = (n: Node | null): { all: number; active: number } => {
   if (!n) return { all: 0, active: 0 };
   const a = count(n.left), b = count(n.right);
@@ -27,6 +27,7 @@ function Stats() {
           ["Total Members", L.all, R.all],
           ["Active Members", L.active, R.active],
           ["Inactive Members", L.all - L.active, R.all - R.active],
+          ["Total Points (BV)", t?.left_points ?? 0, t?.right_points ?? 0],
           ["Carry Forward", t?.left_carry ?? 0, t?.right_carry ?? 0],
           ["Lifetime Matchings", rank?.lifetime_matchings ?? 0, ""],
         ]}
