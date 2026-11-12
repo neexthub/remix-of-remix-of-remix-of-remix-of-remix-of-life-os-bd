@@ -284,6 +284,8 @@ $router->get('/api/member/tree/binary', function () {
             'purchased' => (float) $n['purchased'],
             'left_total' => $l !== null ? ($size[$l] ?? 0) : 0,
             'right_total' => $r !== null ? ($size[$r] ?? 0) : 0,
+            'left_points' => $l !== null ? ($points[$l] ?? 0.0) : 0.0,
+            'right_points' => $r !== null ? ($points[$r] ?? 0.0) : 0.0,
             'matched' => (int) $n['lifetime_matchings'],
             'active' => (bool) $n['is_active'],
             'left_carry' => (float) $n['left_carry'],

@@ -27,6 +27,7 @@ function Stats() {
           ["Total Members", L.all, R.all],
           ["Active Members", L.active, R.active],
           ["Inactive Members", L.all - L.active, R.all - R.active],
+          ["Total Points (BV)", t?.left_points ?? 0, t?.right_points ?? 0],
           ["Carry Forward", t?.left_carry ?? 0, t?.right_carry ?? 0],
           ["Lifetime Matchings", rank?.lifetime_matchings ?? 0, ""],
         ]}

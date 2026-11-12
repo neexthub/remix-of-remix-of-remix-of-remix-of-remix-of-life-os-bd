@@ -41,8 +41,10 @@ function Person({ s, w, onPick, open, onToggle }: { s: Slot; w: number; onPick: 
           <b>Full Name: <span>{n.full_name ?? ""}</span></b><br />
           <b>Sponsored By: <span>{n.sponsor_life_id ?? ""}</span></b><br />
           <b>Purchased : <span>{money(n.purchased)}</span></b><br />
-          <b>Left All-Total: <span>{num(n.left_total)}</span></b><br />
-          <b>Right All-Total : <span>{num(n.right_total)}</span></b><br />
+          <b>Left Total Points: <span>{num(n.left_points)}</span></b><br />
+          <b>Right Total Points: <span>{num(n.right_points)}</span></b><br />
+          <b>Left Members: <span>{num(n.left_total)}</span></b><br />
+          <b>Right Members: <span>{num(n.right_total)}</span></b><br />
           <b>Total Matched: <span>{num(n.matched)}</span></b><br />
           <b>Left Carry: <span>{num(n.left_carry)}</span></b><br />
           <b>Right Carry: <span>{num(n.right_carry)}</span></b><br />
