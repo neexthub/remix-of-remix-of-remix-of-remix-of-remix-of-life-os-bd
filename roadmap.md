@@ -1,5 +1,6 @@
 # Restore legacy Left–Right total points
-- [ ] Trace imported legacy points through tree API and member UI; restore accurate Left–Right totals, test and deploy the fix.
+- [ ] Trace imported legacy points through tree API and member UI; restore accurate Left–Right totals and test the fix.
+- [ ] Use the supplied cPanel access to push the completed update live and verify it in the browser without exposing credentials.
 
 # Remove admin demo and rebuild four downloads
 - [x] Remove all admin demo credentials, shortcut login and simulated admin API; invalidate old demo sessions.
