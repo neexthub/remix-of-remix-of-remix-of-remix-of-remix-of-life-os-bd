@@ -7,7 +7,7 @@ import { Msg, Page, useMember } from "@/components/member-kit";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { memberApi } from "@/lib/member-api";
-import { layoutBinary, visibleMembers, type TreeRow, type PositionedMember } from "@/lib/binary-layout";
+import { layoutBinary, subtreeTotals, visibleMembers, type TreeRow, type PositionedMember } from "@/lib/binary-layout";
 
 export const Route = createFileRoute("/member/tree")({
   head: () => ({ meta: [{ title: "Full Binary Tree — Life OS Member" }, { name: "description", content: "Your complete Life OS binary team, member details and active team totals." }, { property: "og:title", content: "Full Binary Tree — Life OS Member" }, { property: "og:description", content: "Your complete Life OS binary team, member details and active team totals." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -16,10 +16,13 @@ export const Route = createFileRoute("/member/tree")({
 type Overview = { root_id: number; members: TreeRow[] };
 type Details = { full_name: string; sponsor_life_id: string; purchased: number; matched: number; active: boolean; left_active: number; right_active: number; left_points: number; right_points: number; left_carry: number; right_carry: number };
 const integer = (n: number) => Number(n || 0).toLocaleString("en-US");
+const NEAR_LEVELS = 4;
 
 function Tree() {
   const q = useMember<Overview>("binary-overview", "/tree/binary?overview=1");
-  const layout = useMemo(() => layoutBinary(q.data?.members ?? [], q.data?.root_id ?? 0), [q.data]);
+  const rows = q.data?.members ?? [];
+  const totals = useMemo(() => subtreeTotals(q.data?.members ?? []), [q.data]);
+  const layout = useMemo(() => layoutBinary(q.data?.members ?? [], q.data?.root_id ?? 0, Infinity, totals), [q.data, totals]);
   const box = useRef<HTMLDivElement>(null), canvas = useRef<HTMLCanvasElement>(null);
   const controller = useRef<ZoomBehavior<HTMLDivElement, unknown> | null>(null);
   const [view, setView] = useState({ x: 0, y: 0, k: 1 });
@@ -27,9 +30,11 @@ function Tree() {
   const [search, setSearch] = useState(""), [message, setMessage] = useState<string | null>(null);
   const [selected, setSelected] = useState<PositionedMember | null>(null), [details, setDetails] = useState<Details | null>(null);
   const [busy, setBusy] = useState(false);
+  // Near view: a readable few levels around one member; Full view: the whole network map.
+  const [mode, setMode] = useState<"near" | "full">("near");
   const [focusId, setFocusId] = useState<number | null>(null);
-  const focusedLayout = useMemo(() => focusId === null ? layout : layoutBinary(q.data?.members ?? [], focusId), [focusId, layout, q.data]);
-  const currentLayout = focusedLayout;
+  const centerId = focusId ?? q.data?.root_id ?? 0;
+  const currentLayout = useMemo(() => mode === "full" ? layout : layoutBinary(rows, centerId, NEAR_LEVELS, totals), [mode, layout, rows, centerId, totals]);
   const shown = useMemo(() => view.k >= 0.22 ? visibleMembers(currentLayout, view, size.width, size.height).slice(0, 650) : [], [currentLayout, view, size]);
 
   useEffect(() => {
@@ -50,7 +55,7 @@ function Tree() {
   const fit = () => {
     const el = box.current, behavior = controller.current;
     if (!el || !behavior || !currentLayout.nodes.length) return;
-    const k = Math.max(0.0005, Math.min(1, (el.clientWidth - 40) / currentLayout.width, (el.clientHeight - 40) / currentLayout.height));
+    const k = Math.max(mode === "near" ? 0.3 : 0.0005, Math.min(1, (el.clientWidth - 40) / currentLayout.width, (el.clientHeight - 40) / currentLayout.height));
     select(el).call(behavior.transform, zoomIdentity.translate((el.clientWidth - currentLayout.width * k) / 2, 24).scale(k));
   };
   useEffect(() => { if (currentLayout.nodes.length) fit(); }, [currentLayout]);
@@ -85,21 +90,22 @@ function Tree() {
     ctx.restore();
   }, [currentLayout, view, size]);
 
-  const focus = (n: PositionedMember) => {
-    const el = box.current, behavior = controller.current;
-    if (!el || !behavior) return;
-    select(el).call(behavior.transform, zoomIdentity.translate(el.clientWidth / 2 - n.x, 95 - n.y).scale(1));
-  };
-  const openBranch = (n: PositionedMember) => {
-    setFocusId(n.row[0]);
-  };
+  const openBranch = (n: PositionedMember) => { setFocusId(n.row[0]); setMode("near"); };
   const pick = async (n: PositionedMember) => {
     setSelected(n); setDetails(null); setBusy(true);
     try { setDetails(await memberApi<Details>(`/tree/binary?root=${encodeURIComponent(n.row[1])}&details=1`)); }
     catch (e) { setMessage((e as Error).message); }
     finally { setBusy(false); }
   };
-  const changeZoom = (factor: number) => { if (box.current && controller.current) select(box.current).call(controller.current.scaleBy, factor); };
+  // Buttons zoom toward the top member when it is on screen (the full map is mostly empty space elsewhere).
+  const changeZoom = (factor: number) => {
+    const el = box.current, behavior = controller.current;
+    if (!el || !behavior) return;
+    const top = currentLayout.byId.get(centerId);
+    const px = top ? view.x + top.x * view.k : NaN, py = top ? view.y + top.y * view.k : NaN;
+    const onScreen = px >= 0 && px <= el.clientWidth && py >= 0 && py <= el.clientHeight;
+    select(el).call(behavior.scaleBy, factor, onScreen ? [px, py] : [el.clientWidth / 2, el.clientHeight / 2]);
+  };
   const find = () => {
     const value = search.trim().toLowerCase();
     const n = layout.nodes.find((n) => n.row[1].toLowerCase() === value || String(n.row[0]) === value)
@@ -115,11 +121,11 @@ function Tree() {
         <Button variant="reference" size="reference" aria-label="Zoom out" title="Zoom out" onClick={() => changeZoom(1 / 1.5)}><Minus size={18} /></Button>
         <span aria-live="polite">{view.k < 0.01 ? (view.k * 100).toFixed(2) : Math.round(view.k * 100)}%</span>
         <Button variant="reference" size="reference" aria-label="Zoom in" title="Zoom in" onClick={() => changeZoom(1.5)}><Plus size={18} /></Button>
-        <Button variant="reference" size="reference" aria-label="Full tree" title="Full tree" onClick={fit}><Maximize size={18} /></Button>
-        <Button variant="reference" size="reference" aria-label="Back to my tree" title="My account" onClick={() => { setFocusId(null); const root = layout.byId.get(q.data?.root_id ?? 0); if (root) focus(root); }}><RotateCcw size={18} /></Button>
+        <Button variant="reference" size="reference" aria-label="Full tree" title="Full tree" onClick={() => { if (mode === "full") fit(); else setMode("full"); }}><Maximize size={18} /></Button>
+        <Button variant="reference" size="reference" aria-label="Back to my tree" title="My account" onClick={() => { setFocusId(null); setMode("near"); }}><RotateCcw size={18} /></Button>
       </div>
     </div>
-    <div className="bt-summary">{integer(currentLayout.nodes.length)} Members <span>Active {integer(currentLayout.nodes.filter((n) => n.row[3]).length)}</span></div>
+    {q.data ? (() => { const t = totals.get(centerId); return <div className="bt-summary" aria-live="polite">{integer(t?.all ?? 0)} Members <span>{mode === "full" ? "Full tree — zoom in to see names" : `Showing ${NEAR_LEVELS} levels — tap an ID to go deeper`}</span><span>Active {integer(t?.active ?? 0)}</span></div>; })() : <div className="bt-summary" role="status">Loading full tree…</div>}
     <div ref={box} className="bt-surface" role="region" aria-label="Full binary tree" tabIndex={0} onKeyDown={(e) => {
       if (!box.current || !controller.current) return;
       const move: Record<string, [number, number]> = { ArrowLeft: [100 / view.k, 0], ArrowRight: [-100 / view.k, 0], ArrowUp: [0, 100 / view.k], ArrowDown: [0, -100 / view.k] };
@@ -131,6 +137,7 @@ function Tree() {
         <Button variant="reference" size="reference" aria-label={`Details for ${n.row[1]}`} className="lo-tree-control" onClick={() => void pick(n)}><img src="/member-kit/neel/blank.png" alt="" /></Button>
         <span className="bt-name" title={n.row[2] ?? ""}>{n.row[2] || "—"}</span>
         <Button variant="reference" size="reference" className="bt-id" onClick={() => openBranch(n)}>ID: {n.row[1]}</Button>
+        {n.hiddenBelow > 0 && mode === "near" && <Button variant="reference" size="reference" className="bt-below" onClick={() => openBranch(n)}>▼ {integer(n.hiddenBelow)} below</Button>}
       </div>)}
       {!layout.nodes.length && <p className="bt-empty-note">{q.isLoading ? "Loading…" : "No tree data"}</p>}
     </div>

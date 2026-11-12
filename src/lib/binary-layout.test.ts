@@ -12,6 +12,11 @@ describe("full binary tree", () => {
     const l = layoutBinary(chain, 1);
     expect(l.nodes).toHaveLength(30); expect(l.byId.get(1)?.leftActive).toBe(29);
   });
+  it("near view draws limited levels but keeps whole-team active totals", () => {
+    const chain: TreeRow[] = Array.from({ length: 30 }, (_, i) => [i + 1, String(i + 1), null, i % 2, i < 29 ? i + 2 : null, null]);
+    const l = layoutBinary(chain, 1, 4);
+    expect(l.nodes).toHaveLength(5); expect(l.byId.get(1)?.leftActive).toBe(15); expect(l.byId.get(5)?.hiddenBelow).toBe(25);
+  });
   it("reveals the area reached by zoom and pan", () => {
     const l = layoutBinary(rows, 1), deep = l.byId.get(4);
     expect(visibleMembers(l, { x: 0, y: 0, k: 1 }, 300, 100).some((n) => n.row[0] === 4)).toBe(false);
