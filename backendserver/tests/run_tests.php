@@ -207,7 +207,7 @@ check('Tree info box leg totals match the placed members',
     ($bt['left_total'] ?? -1) === $countLeg($bt['left'] ?? null) && ($bt['right_total'] ?? -1) === $countLeg($bt['right'] ?? null) && $bt['left_total'] >= 1 && $bt['right_total'] >= 1,
     json_encode([$bt['left_total'] ?? null, $bt['right_total'] ?? null]));
 check('Tree info box includes lifetime Left and Right BV points from successful activations',
-    ($bt['left_points'] ?? -1) === 2000.0 && ($bt['right_points'] ?? -1) === 1000.0,
+    (float) ($bt['left_points'] ?? -1) === 2000.0 && (float) ($bt['right_points'] ?? -1) === 1000.0,
     json_encode([$bt['left_points'] ?? null, $bt['right_points'] ?? null]));
 check('Tree info box shows the sponsor of each member', ($bt['left']['sponsor_life_id'] ?? '') === $B['life_id'] && ($bt['right']['sponsor_life_id'] ?? '') === $B['life_id']);
 
