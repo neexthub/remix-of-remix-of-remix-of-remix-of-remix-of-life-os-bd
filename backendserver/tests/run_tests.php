@@ -477,5 +477,17 @@ master('POST', '/api/master/files/delete', ['path' => 'tests/deploy-a.php']);
 $r = master('GET', '/api/master/audit');
 check('master audit trail recorded', $r['status'] === 200 && count($r['json']['data'] ?? []) >= 3, 'rows=' . count($r['json']['data'] ?? []));
 
+// Admin Balance Add report lists every admin addition (D Wallet + E Wallet) with member details.
+$baD = api('POST', '/api/admin/balance-add', ['life_id' => $C['life_id'], 'amount' => 250, 'wallet' => 'DEPOSIT', 'note' => 'report test D'], $adminToken);
+$baE = api('POST', '/api/admin/balance-add', ['life_id' => $C['life_id'], 'amount' => 40, 'wallet' => 'ADJUSTMENT', 'note' => 'report test E'], $adminToken);
+$rep = api('GET', '/api/admin/balance-add', null, $adminToken)['json']['data'] ?? [];
+$codes = array_column($rep, 'trx_code');
+check('Balance add report shows D Wallet addition', in_array($baD['json']['data']['payout_code'] ?? '-', $codes, true));
+check('Balance add report shows E Wallet addition', in_array($baE['json']['data']['payout_code'] ?? '-', $codes, true));
+$repD = api('GET', '/api/admin/balance-add?wallet=DEPOSIT', null, $adminToken)['json']['data'] ?? [];
+check('Balance add report wallet filter keeps only D Wallet rows', $repD && !array_filter($repD, fn($r) => $r['wallet'] !== 'DEPOSIT'));
+check('Balance add report excludes commission reversals', !array_filter($rep, fn($r) => str_starts_with((string) $r['trx_code'], 'REV-')));
+check('Balance add report requires admin', api('GET', '/api/admin/balance-add')['status'] === 401);
+
 echo "\n{$tests} checks, " . count($failures) . " failures\n";
 if ($failures) { echo implode("\n", $failures), "\n"; exit(1); }
