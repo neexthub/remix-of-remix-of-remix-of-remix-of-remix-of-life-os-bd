@@ -4,6 +4,30 @@ declare(strict_types=1);
 /** Streaming SQL import and setup-directory removal helpers, kept separate for isolated tests. */
 final class LifeOsInstaller
 {
+    public static function legacyPath(string $directory): string
+    {
+        $path = $directory . '/legacy-data.sql.gz';
+        if (is_file($path)) return $path;
+        $parts = glob($path . '.part*') ?: [];
+        natsort($parts);
+        if (!$parts) throw new RuntimeException('Legacy data file is missing.');
+        $tmp = $path . '.assembling';
+        $out = fopen($tmp, 'wb');
+        if (!$out) throw new RuntimeException('Cannot assemble legacy data.');
+        try {
+            $index = 1;
+            foreach ($parts as $part) {
+                if ($part !== $path . '.part' . $index++) throw new RuntimeException('Legacy data part is missing.');
+                $in = fopen($part, 'rb');
+                if (!$in) throw new RuntimeException('Cannot read legacy data part.');
+                try { if (stream_copy_to_stream($in, $out) === false) throw new RuntimeException('Cannot assemble legacy data.'); }
+                finally { fclose($in); }
+            }
+        } finally { fclose($out); }
+        if (!rename($tmp, $path)) throw new RuntimeException('Cannot save assembled legacy data.');
+        return $path;
+    }
+
     public static function importSql(PDO $pdo, string $path): int
     {
         if (!is_file($path)) throw new RuntimeException('Legacy data file is missing from the setup directory.');

@@ -6,17 +6,12 @@ export const Route = createFileRoute("/member/statistics")({
   component: Stats,
 });
 
-type Node = { active: boolean; left_carry: number; right_carry: number; left_points?: number; right_points?: number; left: Node | null; right: Node | null };
-const count = (n: Node | null): { all: number; active: number } => {
-  if (!n) return { all: 0, active: 0 };
-  const a = count(n.left), b = count(n.right);
-  return { all: 1 + a.all + b.all, active: (n.active ? 1 : 0) + a.active + b.active };
-};
+type Node = { left_total: number; right_total: number; left_active: number; right_active: number; left_carry: number; right_carry: number; left_points?: number; right_points?: number };
 
 function Stats() {
   const t = useMember<Node | null>("tree", "/tree/binary").data ?? null;
   const rank = useMember<{ lifetime_matchings: number; current: { name?: string } | null }>("rank", "/rank").data;
-  const L = count(t?.left ?? null), R = count(t?.right ?? null);
+  const L = { all: t?.left_total ?? 0, active: t?.left_active ?? 0 }, R = { all: t?.right_total ?? 0, active: t?.right_active ?? 0 };
   return (
     <Page title="Statistics View">
       <DataTable

@@ -1,3 +1,9 @@
+# Full binary tree and legacy member reconciliation (2026-11-12)
+- [x] Compared all 72,824 members: rank, matching and activation agree; repaired five sponsors whose old codes contain invisible direction markers. All 37 normalized duplicate-slot placements remain in the original parent's same-side subtree; every member reachable with consistent pointers. Original duplicate slots cannot be recreated in a binary tree without dropping a member. No balances or payouts changed.
+- [x] Replaced Show more with a complete, zoomable canvas overview and viewport-driven member controls; active-only popup counts tested against real 42,604-member downline (8,596 left / 21,063 right active). Deep member search, phone/desktop, popup and zoom controls tested in preview against the actual live PHP API, with zero browser errors.
+- [x] Deployed/read back reviewed PHP changes; live Sponsor List now displays all 12 real-member names. Added 15 passing frontend tests, five legacy-state tests and read-only live tree assertions; PHP syntax valid. Updated installer archive with the sponsor repairs.
+- [ ] Deploy new frontend to external cPanel and repeat tree UI verification there: blocked because automatic harness provides no exportable cPanel build, and manual project builds are prohibited in this environment. Live tree still uses the previous Show more frontend; backend and sponsor-name fixes are already live.
+
 # Restore legacy Left–Right total points
 - [x] Trace imported legacy points through tree API and member UI; restore accurate Left–Right totals and test the fix (local API 123/123, frontend 12/12, PHP lint and build pass).
 - [x] Deploy backend/frontend through the supplied cPanel access without exposing credentials; live isolated QA API returned Left 2000 / Right 1000, deployed JS contains Tree/Statistics labels, and all three QA users plus temporary files were removed. No existing member funds or financial settings changed.

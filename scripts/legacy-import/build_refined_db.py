@@ -11,7 +11,7 @@ migrated Life OS database (TARGET_DB) on the same local MariaDB server. Rules (u
 import os
 from collections import defaultdict
 
-from legacy_state import tree_record
+from legacy_state import tree_record, sponsor_reference
 
 LEGACY = os.environ.get("LEGACY_DB", "old_lifeos")
 TARGET = os.environ.get("TARGET_DB", "lifeos")
@@ -148,13 +148,13 @@ def main():
     rows = cur.fetchall()
     root, placed, child, moved = build_tree(rows)
     cur.execute("SELECT life_id, id FROM users")
-    by_life = dict(cur.fetchall())
+    by_life = {sponsor_reference(life): uid for life, uid in cur.fetchall()}
     cur.execute("SELECT id, status, total_pairs FROM users")
     state = {uid: (status, pairs) for uid, status, pairs in cur.fetchall()}
     tree = []
     for uid, _, _, ref in rows:
         parent, side = placed[uid]
-        sponsor = None if uid == root else by_life.get(ref) if ref else None
+        sponsor = None if uid == root else by_life.get(sponsor_reference(ref)) if ref else None
         if uid != root and sponsor is None:
             sponsor = root
         status, pairs = state[uid]

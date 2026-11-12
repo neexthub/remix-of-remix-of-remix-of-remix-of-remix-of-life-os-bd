@@ -16,8 +16,8 @@ function Sponsors() {
     <Page title="Direct Sponsors List">
       <DataTable
         caption={<> Direct Downline by the account {me?.life_id} (my group {rows.length}) </>}
-        head={["Joining Time", "User ID", "Full Name", "Cell Number", "Status"]}
-        rows={rows.map((r) => [r.created_at.slice(0, 10), <a key="u">{r.life_id}</a>, r.name ?? "", r.phone, r.is_active ? "Active" : "Inactive"])}
+        head={["Joining Time", "Account ID", "Full Name", "Cell Number", "Status"]}
+        rows={rows.map((r) => [r.created_at.slice(0, 10), <a key="u">{r.life_id}</a>, r.name || "—", r.phone, r.is_active ? "Active" : "Inactive"])}
       />
     </Page>
   );

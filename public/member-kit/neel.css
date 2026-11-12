@@ -217,3 +217,24 @@
 .neel .bt-tree .bt-more button:disabled { opacity: 0.6; cursor: wait; }
 .neel .bt-empty-note { padding: 40px; }
 .neel .bt-hint { font-size: 12px; color: #555; margin: 6px 0 0; text-align: center; }
+
+/* Whole-network overview; only visible member controls are mounted at readable zoom. */
+:root { --lo-tree-paper: #fff; --lo-tree-border: #c9d6ea; --lo-tree-shadow: 0 4px 14px #0002; }
+.neel .bt-surface { position: relative; height: 760px; width: 100%; overflow: hidden; border: 1px solid var(--lo-tree-border); background: var(--lo-tree-paper); border-radius: 6px; touch-action: none; cursor: grab; }
+.neel .bt-surface:active { cursor: grabbing; }
+.neel .bt-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.neel .bt-member { position: absolute; top: 0; left: 0; width: 120px; margin: -38px 0 0 -60px; transform-origin: 60px 38px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.neel .bt-member img { width: 56px; height: 60px; object-fit: contain; }
+.neel .bt-member.bt-inactive img { opacity: .45; }
+.neel .bt-member .bt-name { width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 18px; font-weight: 700; color: var(--lo-blue-deep); background: var(--lo-tree-paper); }
+.neel .bt-member .bt-id { font-size: 11px; line-height: 16px; color: var(--lo-tree-link); padding: 0; background: var(--lo-tree-paper); cursor: pointer; }
+.neel .bt-summary { display: flex; justify-content: space-between; margin: 10px 0; font-weight: bold; color: var(--lo-blue-deep); }
+.neel .bt-toolbar form { display: flex; gap: 6px; align-items: center; }
+.neel .bt-zoom button { display: inline-flex; align-items: center; justify-content: center; }
+.bt-member-dialog { width: calc(100vw - 48px); max-width: 420px; max-height: calc(100dvh - 48px); overflow-y: auto; box-sizing: border-box; border-radius: 6px; background: var(--background); color: var(--foreground); }
+.bt-member-dialog h2 { font-size: 22px; line-height: 28px; padding-right: 18px; overflow-wrap: anywhere; letter-spacing: 0; }
+.bt-member-dialog p { font-size: 14px; line-height: 20px; }
+.bt-member-dialog button { font-size: 13px; white-space: normal; }
+.bt-member-details { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 18px; font-size: 14px; }
+.bt-member-details dt { color: var(--muted-foreground); }
+.bt-member-details dd { text-align: right; overflow-wrap: anywhere; font-weight: 600; }

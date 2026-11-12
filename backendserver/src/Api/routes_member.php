@@ -253,15 +253,17 @@ $router->get('/api/member/tree/binary', function () {
     // Load the member's whole placement downline level by level (ids only) so leg totals cover every member,
     // not just the levels shown on screen. Batched IN lists keep it portable across MySQL/MariaDB versions.
     $children = [];
+    $activity = [];
     $frontier = [$uid];
     while ($frontier) {
         $next = [];
         foreach (array_chunk($frontier, 500) as $chunk) {
             $marks = implode(',', array_fill(0, count($chunk), '?'));
-            foreach (DB::all("SELECT user_id, left_child_id, right_child_id FROM lo_tree WHERE user_id IN ($marks)", $chunk) as $r) {
+            foreach (DB::all("SELECT user_id, left_child_id, right_child_id, is_active FROM lo_tree WHERE user_id IN ($marks)", $chunk) as $r) {
                 $l = $r['left_child_id'] ? (int) $r['left_child_id'] : null;
                 $rt = $r['right_child_id'] ? (int) $r['right_child_id'] : null;
                 $children[(int) $r['user_id']] = [$l, $rt];
+                $activity[(int) $r['user_id']] = (bool) $r['is_active'];
                 foreach ([$l, $rt] as $c) if ($c !== null && !isset($children[$c])) $next[] = $c;
             }
         }
@@ -275,6 +277,22 @@ $router->get('/api/member/tree/binary', function () {
         $seen[$id] = true; $order[] = $id;
         foreach ($children[$id] ?? [] as $c) if ($c !== null) $stack[] = $c;
     }
+    // Compact, flat overview: the browser lays out the entire authorised downline once and draws
+    // only the visible area. No recursion/depth cap and no private phone or financial data.
+    if (($_GET['overview'] ?? '') === '1') {
+        $members = [];
+        foreach (array_chunk($order, 500) as $chunk) {
+            $marks = implode(',', array_fill(0, count($chunk), '?'));
+            foreach (DB::all("SELECT u.id, u.life_id,
+                (SELECT p.name FROM user_profiles p WHERE p.user_id=u.id ORDER BY p.id DESC LIMIT 1) name
+                FROM users u WHERE u.id IN ($marks)", $chunk) as $n) {
+                $id = (int) $n['id'];
+                [$l, $r] = $children[$id] ?? [null, null];
+                $members[] = [$id, $n['life_id'], $n['name'], !empty($activity[$id]) ? 1 : 0, $l, $r];
+            }
+        }
+        Http::ok(['root_id' => $uid, 'members' => $members]);
+    }
     // Sum every successful activation's BV, including already-settled legacy imports. These lifetime
     // leg points are read-only totals; they never create volume, commission or a new financial liability.
     $ownPoints = [];
@@ -284,14 +302,17 @@ $router->get('/api/member/tree/binary', function () {
         foreach ($rows as $row) $ownPoints[(int) $row['user_id']] = (float) $row['points'];
     }
     $size = [];
+    $activeSize = [];
     $points = [];
     foreach (array_reverse($order) as $id) {
         [$l, $r] = $children[$id] ?? [null, null];
         $size[$id] = 1 + ($l !== null ? ($size[$l] ?? 0) : 0) + ($r !== null ? ($size[$r] ?? 0) : 0);
+        $activeSize[$id] = (!empty($activity[$id]) ? 1 : 0) + ($l !== null ? ($activeSize[$l] ?? 0) : 0) + ($r !== null ? ($activeSize[$r] ?? 0) : 0);
         $points[$id] = ($ownPoints[$id] ?? 0.0) + ($l !== null ? ($points[$l] ?? 0.0) : 0.0) + ($r !== null ? ($points[$r] ?? 0.0) : 0.0);
     }
-    $build = function (int $id, int $depth) use (&$build, $size, $points): ?array {
-        if ($depth > 6) return null;
+    $maxDepth = ($_GET['details'] ?? '') === '1' ? 0 : 6;
+    $build = function (int $id, int $depth) use (&$build, $size, $activeSize, $points, $maxDepth): ?array {
+        if ($depth > $maxDepth) return null;
         $n = DB::one(
             "SELECT t.*, u.life_id, u.phone,
                     (SELECT p.name FROM user_profiles p WHERE p.user_id = t.user_id ORDER BY p.id LIMIT 1) AS full_name,
@@ -310,6 +331,8 @@ $router->get('/api/member/tree/binary', function () {
             'purchased' => (float) $n['purchased'],
             'left_total' => $l !== null ? ($size[$l] ?? 0) : 0,
             'right_total' => $r !== null ? ($size[$r] ?? 0) : 0,
+            'left_active' => $l !== null ? ($activeSize[$l] ?? 0) : 0,
+            'right_active' => $r !== null ? ($activeSize[$r] ?? 0) : 0,
             'left_points' => $l !== null ? ($points[$l] ?? 0.0) : 0.0,
             'right_points' => $r !== null ? ($points[$r] ?? 0.0) : 0.0,
             'matched' => (int) $n['lifetime_matchings'],
@@ -329,7 +352,9 @@ $router->get('/api/member/tree/enrollment', function () {
     $u = Auth::member();
     $uid = (int) $u['id'];
     $directs = DB::all(
-        'SELECT u.id, u.life_id, u.phone, u.created_at, t.is_active FROM lo_tree t JOIN users u ON u.id = t.user_id WHERE t.sponsor_id = ? ORDER BY u.id',
+        'SELECT u.id, u.life_id, u.phone, u.created_at, t.is_active,
+         (SELECT p.name FROM user_profiles p WHERE p.user_id=u.id ORDER BY p.id DESC LIMIT 1) AS name
+         FROM lo_tree t JOIN users u ON u.id = t.user_id WHERE t.sponsor_id = ? ORDER BY u.id',
         [$uid]
     );
     $legs = DB::all('SELECT leg_user_id, carry, consumed FROM lo_enroll_legs WHERE upline_id = ?', [$uid]);

@@ -1,9 +1,12 @@
 import unittest
 
-from legacy_state import tree_record
+from legacy_state import tree_record, sponsor_reference
 
 
 class LegacyStateTests(unittest.TestCase):
+    def test_direction_marker_does_not_break_original_sponsor(self):
+        self.assertEqual(sponsor_reference('\u200eLID-2026-2769D6'), 'LID-2026-2769D6')
+
     def test_old_matching_is_preserved(self):
         self.assertEqual(tree_record(89, 87, 87, "L", 91, None, "active", 8596)[7], 8596)
 

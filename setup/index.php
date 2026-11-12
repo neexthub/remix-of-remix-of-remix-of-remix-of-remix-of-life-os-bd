@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'insta
         if (!preg_match('/\A[A-Za-z0-9_]{1,64}\z/', $name)) throw new RuntimeException('Database name may contain only letters, numbers and underscore.');
         if ($user === '' || strlen($user) > 128 || strlen($pass) > 512) throw new RuntimeException('Enter valid database credentials.');
         if (!in_array($old['mode'], ['schema', 'legacy'], true)) throw new RuntimeException('Choose a setup type.');
-        if ($old['mode'] === 'legacy' && !is_file(__DIR__ . '/legacy-data.sql.gz')) throw new RuntimeException('legacy-data.sql.gz is missing. Upload the complete package, not just the installer scripts.');
+        if ($old['mode'] === 'legacy') LifeOsInstaller::legacyPath(__DIR__);
         $adminPassword = (string) ($_POST['admin_password'] ?? '');
         if ($old['mode'] === 'schema') {
             if (!filter_var($old['admin_email'], FILTER_VALIDATE_EMAIL)) throw new RuntimeException('Enter a valid initial admin email.');
