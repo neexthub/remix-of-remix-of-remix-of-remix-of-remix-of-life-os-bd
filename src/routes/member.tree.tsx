@@ -18,7 +18,7 @@ type Node = {
 
 const money = (v?: number) => (Number(v) || 0).toFixed(2);
 const num = (v?: number) => String(Math.round(Number(v) || 0));
-const ZMIN = 0.2, ZMAX = 2;
+const ZMIN = 0.1, ZMAX = 2;
 const clampZ = (z: number) => Math.min(ZMAX, Math.max(ZMIN, Math.round(z * 100) / 100));
 
 type Ctx = {
