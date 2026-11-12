@@ -151,3 +151,9 @@
 - [x] Dashboard ID STATUS box shows activation status + rank.
 - [x] Rename "Lifetime Matchings" -> "Total Matching"; remove Referral Code; "Package Activation" -> "ID Active"; "Username" -> "Account ID" everywhere.
 - [x] Push all pending work (tree, balance add report, auto username, these labels) to live lifeosbd.com and verify. Leftover QAI test accounts removed.
+
+# Live database reset with old data (2026-11-12)
+- [ ] Back up the live database and give the user a copy.
+- [ ] Empty the live database and run the setup installer with all old data.
+- [ ] Keep admin login, cron and merchant API settings working; remove "test" members.
+- [ ] Verify live site, delete setup files.
