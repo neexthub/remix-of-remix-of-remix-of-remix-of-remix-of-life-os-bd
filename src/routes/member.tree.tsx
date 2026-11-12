@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Msg, Page, useMember } from "@/components/member-kit";
 import { Button } from "@/components/ui/button";
+import { memberApi } from "@/lib/member-api";
 
 export const Route = createFileRoute("/member/tree")({
   head: () => ({ meta: [{ title: "Binary Tree — Life OS Member" }, { name: "description", content: "Life OS binary tree." }, { property: "og:title", content: "Binary Tree — Life OS Member" }, { property: "og:description", content: "Life OS binary tree." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -11,65 +12,79 @@ export const Route = createFileRoute("/member/tree")({
 type Node = {
   user_id: number; life_id: string; active: boolean; left_carry: number; right_carry: number;
   full_name?: string | null; sponsor_life_id?: string | null; purchased?: number; left_total?: number; right_total?: number; left_points?: number; right_points?: number; matched?: number;
+  has_left?: boolean; has_right?: boolean;
   left: Node | null; right: Node | null;
 };
-type Slot = { n: Node | null; parent: Node | null; side: "L" | "R" | null };
-
-function find(n: Node | null, id: string): Node | null {
-  if (!n) return null;
-  if (n.life_id.toLowerCase() === id.toLowerCase()) return n;
-  return find(n.left, id) ?? find(n.right, id);
-}
-
-const ARROW = "/member-kit/neel/tree-arrow.png";
 
 const money = (v?: number) => (Number(v) || 0).toFixed(2);
 const num = (v?: number) => String(Math.round(Number(v) || 0));
+const ZMIN = 0.1, ZMAX = 2;
+const clampZ = (z: number) => Math.min(ZMAX, Math.max(ZMIN, Math.round(z * 100) / 100));
 
-/** One reference tree cell: photo (hover or tap shows the member info box) + "User ID" link, or a faded "Register" slot. */
-function Person({ s, w, onPick, open, onToggle }: { s: Slot; w: number; onPick: (n: Node) => void; open: boolean; onToggle: (id: number | null) => void }) {
-  if (s.n) {
-    const n = s.n;
-    return (
-      <span className={`lo-node${open ? " open" : ""}`}>
-        <Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label={`Details for ${n.life_id}`} aria-expanded={open} aria-describedby={`tree-info-${n.user_id}`} onClick={() => onToggle(open ? null : n.user_id)}>
-          <img src="/member-kit/neel/blank.png" alt="" style={{ width: w, opacity: n.active ? 0.9 : 0.6 }} />
-        </Button>
-        <br />
-        <a href="#" onClick={(e) => { e.preventDefault(); onToggle(null); onPick(n); }}>User ID: {n.life_id}</a>
-        <span className="tooltip" id={`tree-info-${n.user_id}`} role="tooltip" onClick={() => onToggle(null)}>
-          <b>Full Name: <span>{n.full_name ?? ""}</span></b><br />
-          <b>Sponsored By: <span>{n.sponsor_life_id ?? ""}</span></b><br />
-          <b>Purchased : <span>{money(n.purchased)}</span></b><br />
-          <b>Left Total Points: <span>{num(n.left_points)}</span></b><br />
-          <b>Right Total Points: <span>{num(n.right_points)}</span></b><br />
-          <b>Left Members: <span>{num(n.left_total)}</span></b><br />
-          <b>Right Members: <span>{num(n.right_total)}</span></b><br />
-          <b>Total Matched: <span>{num(n.matched)}</span></b><br />
-          <b>Left Carry: <span>{num(n.left_carry)}</span></b><br />
-          <b>Right Carry: <span>{num(n.right_carry)}</span></b><br />
-        </span>
-      </span>
-    );
-  }
-  if (!s.parent || !s.side) return <>{"\u00a0"}</>;
-  const href = `/join?ref=${encodeURIComponent(s.parent.life_id)}&team=${s.side}`;
+type Ctx = {
+  openId: number | null; setOpenId: (id: number | null) => void;
+  onPick: (n: Node) => void;
+  more: Record<string, Node>; loading: Record<string, boolean>; loadMore: (n: Node) => void;
+};
+
+/** One member: photo (tap shows the info box), then name and User ID underneath. */
+function Person({ n, c }: { n: Node; c: Ctx }) {
+  const open = c.openId === n.user_id;
   return (
-    <>
-      <a href={href}><img src="/member-kit/neel/blank.png" alt="" style={{ width: w, opacity: 0.4 }} /></a>
-      <br />
-      <a href={href}>Register</a>
-    </>
+    <span className={`lo-node${open ? " open" : ""}`}>
+      <Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label={`Details for ${n.life_id}`} aria-expanded={open} aria-describedby={`tree-info-${n.user_id}`} onClick={() => c.setOpenId(open ? null : n.user_id)}>
+        <img src="/member-kit/neel/blank.png" alt="" className="bt-photo" style={{ opacity: n.active ? 0.9 : 0.6 }} />
+      </Button>
+      <span className="bt-name" title={n.full_name ?? ""}>{n.full_name || "—"}</span>
+      <a href="#" className="bt-id" onClick={(e) => { e.preventDefault(); c.setOpenId(null); c.onPick(n); }}>ID: {n.life_id}</a>
+      <span className="tooltip" id={`tree-info-${n.user_id}`} role="tooltip" onClick={() => c.setOpenId(null)}>
+        <b>Full Name: <span>{n.full_name ?? ""}</span></b><br />
+        <b>Sponsored By: <span>{n.sponsor_life_id ?? ""}</span></b><br />
+        <b>Purchased : <span>{money(n.purchased)}</span></b><br />
+        <b>Left Total Points: <span>{num(n.left_points)}</span></b><br />
+        <b>Right Total Points: <span>{num(n.right_points)}</span></b><br />
+        <b>Left Members: <span>{num(n.left_total)}</span></b><br />
+        <b>Right Members: <span>{num(n.right_total)}</span></b><br />
+        <b>Total Matched: <span>{num(n.matched)}</span></b><br />
+        <b>Left Carry: <span>{num(n.left_carry)}</span></b><br />
+        <b>Right Carry: <span>{num(n.right_carry)}</span></b><br />
+      </span>
+    </span>
   );
 }
 
-const kids = (row: Slot[]): Slot[] => row.flatMap((s) => [
-  { n: s.n?.left ?? null, parent: s.n, side: s.n ? "L" as const : null },
-  { n: s.n?.right ?? null, parent: s.n, side: s.n ? "R" as const : null },
-]);
+function Register({ parent, side }: { parent: Node; side: "L" | "R" }) {
+  const href = `/join?ref=${encodeURIComponent(parent.life_id)}&team=${side}`;
+  return (
+    <span className="lo-node bt-empty">
+      <a href={href}><img src="/member-kit/neel/blank.png" alt="" className="bt-photo" style={{ opacity: 0.35 }} /></a>
+      <a href={href} className="bt-id">Register</a>
+    </span>
+  );
+}
 
-function ArrowRow({ row, span, width }: { row: Slot[]; span: number; width: number }) {
-  return <tr>{row.map((s, i) => <td key={i} colSpan={span} style={{ padding: 0 }}>{s.n ? <img className="link_img" src={ARROW} alt="" style={{ width }} /> : "\u00a0"}</td>)}</tr>;
+/** Recursive branch: every loaded level is drawn; deeper levels load on tap ("Show more").
+ * The <li> wrapper comes from the parent so empty slots and members share the same connector lines. */
+function BranchInner({ n, c }: { n: Node; c: Ctx }) {
+  const full = c.more[n.life_id] ?? n;
+  const unloaded = (full.has_left && !full.left) || (full.has_right && !full.right);
+  return (
+    <>
+      <Person n={full} c={c} />
+      {unloaded ? (
+        <div className="bt-more">
+          <button type="button" onClick={() => c.loadMore(full)} disabled={!!c.loading[full.life_id]}>
+            {c.loading[full.life_id] ? "Loading…" : "▼ Show more"}
+          </button>
+        </div>
+      ) : (
+        <ul>
+          <li>{full.left ? <BranchInner n={full.left} c={c} /> : <Register parent={full} side="L" />}</li>
+          <li>{full.right ? <BranchInner n={full.right} c={c} /> : <Register parent={full} side="R" />}</li>
+        </ul>
+      )}
+    </>
+  );
 }
 
 function Tree() {
@@ -78,6 +93,14 @@ function Tree() {
   const [search, setSearch] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
+  const [more, setMore] = useState<Record<string, Node>>({});
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [zoom, setZoom] = useState(1);
+  const zoomRef = useRef(1);
+  zoomRef.current = zoom;
+  const box = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+
   // Tapping anywhere outside a member closes the open info box (touch screens have no hover-out).
   useEffect(() => {
     if (openId === null) return;
@@ -87,64 +110,131 @@ function Tree() {
     document.addEventListener("keydown", escape);
     return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", escape); };
   }, [openId]);
+
   const top = root ?? q.data ?? null;
 
-  const l0: Slot[] = [{ n: top, parent: null, side: null }];
-  const l1 = kids(l0), l2 = kids(l1), l3 = kids(l2);
-  const cell = (s: Slot, w: number, key: number, extra: { colSpan?: number; width?: string }): ReactNode => (
-    <td key={key} valign="top" {...extra}><Person s={s} w={w} onPick={setRoot} open={!!s.n && s.n.user_id === openId} onToggle={setOpenId} /></td>
-  );
+  /** Change zoom while keeping the point (px, py) inside the scroll box still. */
+  const zoomTo = (next: number, px?: number, py?: number) => {
+    const el = box.current;
+    const z = zoomRef.current;
+    const nz = clampZ(next);
+    if (!el || nz === z) return;
+    const ax = px ?? el.clientWidth / 2, ay = py ?? el.clientHeight / 2;
+    const k = nz / z;
+    const sl = (el.scrollLeft + ax) * k - ax, st = (el.scrollTop + ay) * k - ay;
+    zoomRef.current = nz;
+    setZoom(nz);
+    requestAnimationFrame(() => { el.scrollLeft = sl; el.scrollTop = st; });
+  };
+
+  /** Fit the whole tree width into the box, then centre on the top member. */
+  const fit = () => {
+    const el = box.current, t = inner.current;
+    if (!el || !t) return;
+    const w = t.scrollWidth / zoomRef.current;
+    const nz = clampZ(Math.min(1, (el.clientWidth - 16) / w));
+    zoomRef.current = nz;
+    setZoom(nz);
+    requestAnimationFrame(() => { el.scrollTop = 0; el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2; });
+  };
+
+  // Whenever a new tree is shown, start with the whole tree in view (zoom in with + or pinch).
+  useEffect(() => {
+    if (!top) return;
+    requestAnimationFrame(fit);
+  }, [top?.life_id, q.dataUpdatedAt]);
+
+  // Ctrl + wheel and trackpad pinch zoom the tree (not the page); two-finger pinch on touch screens.
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const local = (x: number, y: number) => { const r = el.getBoundingClientRect(); const s = r.width / el.offsetWidth || 1; return [(x - r.left) / s, (y - r.top) / s] as const; };
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
+      const [x, y] = local(e.clientX, e.clientY);
+      zoomTo(zoomRef.current * Math.exp(-dy * 0.002), x, y);
+    };
+    let pinch: { d: number; z: number } | null = null;
+    const dist = (t: TouchList) => { const a = t.item(0), b = t.item(1); return a && b ? Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) : 1; };
+    const onStart = (e: TouchEvent) => { if (e.touches.length === 2) pinch = { d: dist(e.touches), z: zoomRef.current }; };
+    const onMove = (e: TouchEvent) => {
+      if (!pinch || e.touches.length !== 2) return;
+      e.preventDefault();
+      const a = e.touches.item(0), b = e.touches.item(1);
+      if (!a || !b) return;
+      const [x, y] = local((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
+      zoomTo(pinch.z * (dist(e.touches) / pinch.d), x, y);
+    };
+    const onEnd = (e: TouchEvent) => { if (e.touches.length < 2) pinch = null; };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+    };
+  }, []);
+
+  const loadMore = async (n: Node) => {
+    setLoading((s) => ({ ...s, [n.life_id]: true }));
+    try {
+      const sub = await memberApi<Node>(`/tree/binary?root=${encodeURIComponent(n.life_id)}`);
+      if (sub) setMore((s) => ({ ...s, [n.life_id]: sub }));
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
+      setLoading((s) => ({ ...s, [n.life_id]: false }));
+    }
+  };
+
+  const view = async (id: string) => {
+    setOpenId(null);
+    if (!id) return;
+    try {
+      const sub = await memberApi<Node>(`/tree/binary?root=${encodeURIComponent(id)}`);
+      setMsg(null);
+      setRoot(sub);
+    } catch {
+      setMsg("User not found in your tree");
+    }
+  };
+
+  const c: Ctx = { openId, setOpenId, onPick: (n) => { setSearch(n.life_id); void view(n.life_id); }, more, loading, loadMore };
 
   return (
     <Page title="Binary View">
       <Msg text={q.error ? (q.error as Error).message : msg} />
-      <table width="100%" cellSpacing={0} cellPadding={2} id="demo">
-        <tbody>
-          <tr><th colSpan={8} style={{ textAlign: "center", height: 60 }}> </th></tr>
-          <tr>
-            <td colSpan={8} align="left" style={{ textAlign: "left" }}>
-              <form style={{ textAlign: "left" }} onSubmit={(e) => {
-                e.preventDefault();
-                const f = find(q.data ?? null, search.trim());
-                setMsg(f ? null : "User not found in your tree");
-                setOpenId(null);
-                if (f) setRoot(f);
-              }}>
-                <input type="text" aria-label="Search User ID" size={12} value={search} onChange={(e) => setSearch(e.target.value)} />{" "}
-                <input type="submit" value="View tree" />
-              </form>
-            </td>
-          </tr>
-          <tr>
-            <th colSpan={8} style={{ textAlign: "center", height: 60 }}>
-              <Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label="Back to my tree" title="Back to my tree" onClick={() => { setRoot(null); setSearch(""); setMsg(null); setOpenId(null); }}><img className="link_img" src="/member-kit/neel/tree-arrow-down.png" alt="" style={{ width: 100 }} /></Button>
-            </th>
-          </tr>
+      <div className="bt-toolbar">
+        <form onSubmit={(e) => { e.preventDefault(); void view(search.trim()); }}>
+          <input type="text" aria-label="Search User ID" size={14} placeholder="User ID" value={search} onChange={(e) => setSearch(e.target.value)} />{" "}
+          <input type="submit" value="View tree" />
+        </form>
+        <div className="bt-zoom" role="group" aria-label="Zoom">
+          <button type="button" aria-label="Zoom out" onClick={() => zoomTo(zoomRef.current - 0.1)}>−</button>
+          <span aria-live="polite">{Math.round(zoom * 100)}%</span>
+          <button type="button" aria-label="Zoom in" onClick={() => zoomTo(zoomRef.current + 0.1)}>+</button>
+          <button type="button" onClick={fit}>Full tree</button>
+          <button type="button" onClick={() => zoomTo(1)}>100%</button>
+        </div>
+      </div>
+      <div className="bt-back">
+        <Button variant="reference" size="reference" type="button" className="lo-tree-control" aria-label="Back to my tree" title="Back to my tree" onClick={() => { setRoot(null); setSearch(""); setMsg(null); setOpenId(null); }}><img className="link_img" src="/member-kit/neel/tree-arrow-down.png" alt="" style={{ width: 80 }} /></Button>
+      </div>
+      <div ref={box} className="bt-scroll" role="region" aria-label="Binary tree — scroll to see every member" tabIndex={0}>
+        <div ref={inner} className="bt-tree" style={{ zoom }}>
           {!top ? (
-            <tr><td colSpan={8}>{q.isLoading ? "Loading…" : "No tree data yet."}</td></tr>
+            <p className="bt-empty-note">{q.isLoading ? "Loading…" : "No tree data yet."}</p>
           ) : (
-            <>
-              <tr>
-                <td colSpan={2}> </td>
-                {l0[0] && cell(l0[0], 200, 0, { colSpan: 4 })}
-                <td colSpan={2}> </td>
-              </tr>
-              <tr><td colSpan={8} style={{ padding: 0 }}><img className="link_img" src={ARROW} alt="" style={{ width: 500 }} /></td></tr>
-              <tr>
-                <td> </td>
-                {l1[0] && cell(l1[0], 160, 0, { colSpan: 2, width: "50%" })}
-                <td colSpan={2} valign="top"></td>
-                {l1[1] && cell(l1[1], 160, 1, { colSpan: 2, width: "50%" })}
-                <td> </td>
-              </tr>
-              <ArrowRow row={l1} span={4} width={250} />
-              <tr>{l2.map((s, i) => cell(s, 110, i, { colSpan: 2, width: "25%" }))}</tr>
-              <ArrowRow row={l2} span={2} width={125} />
-              <tr>{l3.map((s, i) => cell(s, 80, i, { width: "12.5%" }))}</tr>
-            </>
+            <ul><li><BranchInner n={top} c={c} /></li></ul>
           )}
-        </tbody>
-      </table>
+        </div>
+      </div>
+      <p className="bt-hint">Scroll down and sideways to see the whole tree. Use + / − or pinch to zoom. Tap “Show more” to open deeper levels.</p>
     </Page>
   );
 }

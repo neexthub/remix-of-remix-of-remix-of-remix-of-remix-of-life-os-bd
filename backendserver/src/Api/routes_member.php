@@ -224,6 +224,24 @@ $router->get('/api/member/ledger', function () {
 $router->get('/api/member/tree/binary', function () {
     $u = Auth::member();
     $uid = (int) $u['id'];
+    // Optional ?root=<Life ID>: view (or lazily expand) any member inside the caller's own placement
+    // downline. The chain is walked upward and must reach the caller, so other legs stay private.
+    $rootParam = trim((string) ($_GET['root'] ?? ''));
+    if ($rootParam !== '') {
+        if (mb_strlen($rootParam) > 40) throw new HttpError('User not found in your tree', 404);
+        $dashed = preg_match('/^LID-?(\d{4})-?([A-Z0-9]+)$/i', $rootParam, $m) ? strtoupper("LID-{$m[1]}-{$m[2]}") : $rootParam;
+        $row = DB::one('SELECT id FROM users WHERE life_id = ? OR life_id = ? OR username = ? ORDER BY id LIMIT 1', [$rootParam, $dashed, $rootParam]);
+        if (!$row) throw new HttpError('User not found in your tree', 404);
+        $rid = (int) $row['id'];
+        $cur = $rid; $guard = 0; $inside = $rid === $uid;
+        while (!$inside && $cur && $guard++ < 200000) {
+            $up = DB::one('SELECT placement_parent_id FROM lo_tree WHERE user_id = ?', [$cur]);
+            $cur = $up && $up['placement_parent_id'] ? (int) $up['placement_parent_id'] : 0;
+            if ($cur === $uid) $inside = true;
+        }
+        if (!$inside) throw new HttpError('User not found in your tree', 404);
+        $uid = $rid;
+    }
     // Load the member's whole placement downline level by level (ids only) so leg totals cover every member,
     // not just the levels shown on screen. Batched IN lists keep it portable across MySQL/MariaDB versions.
     $children = [];
@@ -290,6 +308,8 @@ $router->get('/api/member/tree/binary', function () {
             'active' => (bool) $n['is_active'],
             'left_carry' => (float) $n['left_carry'],
             'right_carry' => (float) $n['right_carry'],
+            'has_left' => $l !== null,
+            'has_right' => $r !== null,
             'left' => $l !== null ? $build($l, $depth + 1) : null,
             'right' => $r !== null ? $build($r, $depth + 1) : null,
         ];

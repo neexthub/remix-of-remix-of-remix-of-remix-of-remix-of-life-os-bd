@@ -177,3 +177,41 @@
 .neel .lo-wallets .lo-status h2 { font-size: 14px; margin: 0; }
 .neel .lo-wallets .lo-status h4 { font-size: 18px; text-align: center; margin: 4px 0 0; }
 .neel .lo-status h4.lo-inactive { color: #ffb3b3; }
+
+/* ---------- Binary tree: full scrollable / zoomable view ---------- */
+.neel { --lo-tree-line: #093F89; }
+.neel .bt-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 10px 0 6px; }
+.neel .bt-toolbar form { margin: 0; }
+.neel .bt-zoom { display: flex; align-items: center; gap: 6px; }
+.neel .bt-zoom button { min-width: 36px; height: 32px; padding: 0 10px; border: 1px solid var(--lo-tree-line); background: #fff; color: var(--lo-tree-line); font-weight: 700; font-size: 15px; border-radius: 4px; cursor: pointer; }
+.neel .bt-zoom button:hover { background: var(--lo-tree-line); color: #fff; }
+.neel .bt-zoom span { min-width: 48px; text-align: center; font-weight: 700; color: var(--lo-tree-line); }
+.neel .bt-back { text-align: center; margin: 4px 0; }
+.neel .bt-scroll { min-height: 420px; max-height: 1400px; overflow: auto; border: 1px solid #c9d6ea; background: #fff; border-radius: 6px; touch-action: pan-x pan-y; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.neel .bt-tree { display: block; width: max-content; min-width: 100%; padding: 16px 8px 230px; box-sizing: border-box; text-align: center; }
+.neel .bt-tree ul { display: flex; justify-content: center; padding: 22px 0 0; margin: 0; list-style: none; position: relative; }
+.neel .bt-tree > ul { padding-top: 0; }
+.neel .bt-tree li { position: relative; flex: 0 0 auto; padding: 22px 4px 0; text-align: center; list-style: none; }
+.neel .bt-tree > ul > li { padding-top: 0; flex: 0 0 auto; }
+/* connector lines: horizontal bar between siblings, drop line to each child, stem from parent */
+.neel .bt-tree li::before, .neel .bt-tree li::after { content: ""; position: absolute; top: 0; width: 50%; height: 22px; border-top: 3px solid var(--lo-tree-line); }
+.neel .bt-tree li::before { right: 50%; }
+.neel .bt-tree li::after { left: 50%; border-left: 3px solid var(--lo-tree-line); }
+.neel .bt-tree li:first-child::before, .neel .bt-tree li:last-child::after { border-top: 0; }
+.neel .bt-tree li:last-child::before { border-right: 3px solid var(--lo-tree-line); width: calc(50% + 1.5px); }
+.neel .bt-tree li:first-child::after { margin-left: -1.5px; }
+.neel .bt-tree > ul > li::before, .neel .bt-tree > ul > li::after { display: none; }
+.neel .bt-tree ul ul::before { content: ""; position: absolute; top: 0; left: 50%; margin-left: -1.5px; height: 22px; border-left: 3px solid var(--lo-tree-line); }
+.neel .bt-tree .lo-node { position: relative; display: inline-flex; flex-direction: column; align-items: center; width: 116px; }
+.neel .bt-tree .bt-photo { width: 78px; margin: 0; cursor: pointer; border: 0; }
+.neel .bt-tree .bt-name { display: block; max-width: 116px; font-size: 12px; font-weight: 700; line-height: 15px; color: #052A5B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+.neel .bt-tree .bt-id, .neel .bt-tree .bt-id:link, .neel .bt-tree .bt-id:visited { display: block; font-size: 11px; line-height: 14px; max-width: 116px; color: var(--lo-tree-link); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.neel .bt-tree .bt-id:hover { color: #000; text-decoration: underline; }
+.neel .bt-tree .bt-empty .bt-id { font-weight: 700; }
+.neel .bt-tree .tooltip { top: 100%; margin: 4px 0 0; }
+.neel .bt-tree .lo-node:hover .tooltip, .neel .bt-tree .lo-node.open .tooltip { display: block; }
+.neel .bt-tree .bt-more { padding-top: 8px; }
+.neel .bt-tree .bt-more button { border: 1px solid var(--lo-tree-line); background: #eef4fc; color: var(--lo-tree-line); font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; cursor: pointer; }
+.neel .bt-tree .bt-more button:disabled { opacity: 0.6; cursor: wait; }
+.neel .bt-empty-note { padding: 40px; }
+.neel .bt-hint { font-size: 12px; color: #555; margin: 6px 0 0; text-align: center; }
