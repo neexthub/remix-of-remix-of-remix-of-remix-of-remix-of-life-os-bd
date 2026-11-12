@@ -90,11 +90,6 @@ function Tree() {
     ctx.restore();
   }, [currentLayout, view, size]);
 
-  const focus = (n: PositionedMember) => {
-    const el = box.current, behavior = controller.current;
-    if (!el || !behavior) return;
-    select(el).call(behavior.transform, zoomIdentity.translate(el.clientWidth / 2 - n.x, 95 - n.y).scale(1));
-  };
   const openBranch = (n: PositionedMember) => { setFocusId(n.row[0]); setMode("near"); };
   const pick = async (n: PositionedMember) => {
     setSelected(n); setDetails(null); setBusy(true);
