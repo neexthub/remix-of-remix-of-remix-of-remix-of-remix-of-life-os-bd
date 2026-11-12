@@ -133,6 +133,7 @@ function Tree() {
     if (!el || !t) return;
     const w = t.scrollWidth / zoomRef.current;
     const nz = clampZ(Math.min(1, (el.clientWidth - 16) / w));
+    console.log("FITDBG", el.clientWidth, t.scrollWidth, w, nz);
     zoomRef.current = nz;
     setZoom(nz);
     requestAnimationFrame(() => { el.scrollTop = 0; el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2; });
