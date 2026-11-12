@@ -142,3 +142,7 @@
 - [x] Rename Deposit -> D Wallet, Withdraw -> E Wallet; E->D swap with 4% charge; fixed 10% E withdrawal charge reserved with the amount (Wallet::available now subtracts amount + charge).
 - [x] Live: 011 migration + Wallet/PanelPolicy/routes_member deployed and read back; old-site login fixes (dashless Life ID, trimmed password, shared phone) deployed. Real browser test with temporary QA admin/member: 21 admin + 21 member pages, swap 1000 -> D 960, withdraw 500 -> E 450, admin reject -> E 1000; zero browser/API errors; QA rows removed (users back to 72,753).
 - [x] Local suite on fresh MariaDB: run_tests 122/122 (retired transfer checks now expect 410), wallet_swap_login_test 14/14, policy/plan/captcha/path tests, frontend 9/9. cPanel package LifeOS-cPanel_v4.zip built and smoke-tested.
+
+# Binary tree full view (2026-11-12)
+- [x] Whole tree in a scrollable box with zoom (+/−, Full tree, 100%, pinch, Ctrl+wheel); name + ID under every member; "Show more" loads deeper levels; search opens any ID in own downline (server-checked). Local API suite 138/0; browser-checked phone + desktop with sample data.
+- [ ] Push to live lifeosbd.com — waiting for the user's go-ahead from this remix.
