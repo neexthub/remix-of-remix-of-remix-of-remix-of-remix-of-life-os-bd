@@ -210,6 +210,14 @@ check('Tree info box includes lifetime Left and Right BV points from successful 
     (float) ($bt['left_points'] ?? -1) === 2000.0 && (float) ($bt['right_points'] ?? -1) === 1000.0,
     json_encode([$bt['left_points'] ?? null, $bt['right_points'] ?? null]));
 check('Tree info box shows the sponsor of each member', ($bt['left']['sponsor_life_id'] ?? '') === $B['life_id'] && ($bt['right']['sponsor_life_id'] ?? '') === $B['life_id']);
+// Full-tree view: any member inside the caller's own downline can be opened (search / Show more); uplines stay private.
+check('Tree marks which children exist', ($bt['has_left'] ?? null) === true && ($bt['has_right'] ?? null) === true);
+$sub = api('GET', '/api/member/tree/binary?root=' . urlencode($C['life_id']), null, $B['token']);
+check('B can open C (own downline) as tree root', $sub['status'] === 200 && ($sub['json']['data']['life_id'] ?? '') === $C['life_id'] && ($sub['json']['data']['full_name'] ?? null) !== null, $sub['raw']);
+$up = api('GET', '/api/member/tree/binary?root=' . urlencode((string) $meA['life_id']), null, $B['token']);
+check('B cannot open its upline A as tree root', $up['status'] === 404, (string) $up['status']);
+$side = api('GET', '/api/member/tree/binary?root=' . urlencode($D['life_id']), null, $C['token']);
+check('C cannot open sibling D (other leg) as tree root', $side['status'] === 404, (string) $side['status']);
 
 // ---- Daily matching cap: force C's used cap to 4999, then a match pays 1 taka ----
 $pdo = DB::pdo();
