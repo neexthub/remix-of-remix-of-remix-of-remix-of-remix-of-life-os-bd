@@ -92,7 +92,13 @@ final class Commission
             $act = DB::one('SELECT * FROM lo_activations WHERE id = ? FOR UPDATE', [$activationId]);
             if (!$act) throw new HttpError('Activation not found', 404);
             DB::run('UPDATE lo_activations SET payment_status = ? WHERE id = ?', [$status, $activationId]);
-            if ((int) $act['processed'] !== 1) return;
+            if ((int) $act['processed'] !== 1) {
+                // Active New ID turns the package on before settlement; undo that if nothing else keeps it active.
+                if (!DB::one("SELECT id FROM lo_activations WHERE user_id = ? AND payment_status = 'SUCCESS' LIMIT 1", [(int) $act['user_id']])) {
+                    DB::run('UPDATE lo_tree SET is_active = 0 WHERE user_id = ?', [(int) $act['user_id']]);
+                }
+                return;
+            }
 
             $rows = DB::all("SELECT * FROM lo_ledger WHERE activation_id = ? AND status = 'PAID' AND amount > 0 AND ledger_type <> 'ADJUSTMENT' FOR UPDATE", [$activationId]);
             foreach ($rows as $row) {

@@ -585,16 +585,44 @@ $router->post('/api/member/activate-id', function () {
         $settings = [];
         foreach (DB::all('SELECT k, v FROM lo_settings') as $row) $settings[$row['k']] = $row['v'];
         if (!\LifeOS\PanelPolicy::enabled($settings['transfer_status'] ?? '0')) throw new HttpError('Active New ID is currently disabled', 403);
-        if (DB::one("SELECT id FROM lo_activations WHERE user_id = ? AND payment_status IN ('SUCCESS','PENDING')", [$toUid])) throw new HttpError('This ID is already active or has a pending activation', 409);
+        if (DB::one("SELECT id FROM lo_activations WHERE user_id = ? AND payment_status = 'SUCCESS'", [$toUid])) throw new HttpError('This ID is already active', 409);
         if (\LifeOS\Engine\Wallet::deposit($uid) + 1e-9 < ACTIVE_ID_FEE) throw new HttpError('Insufficient Deposit wallet balance', 422);
         $code = 'ACT-' . strtoupper(bin2hex(random_bytes(8)));
         $actId = DB::insert("INSERT INTO lo_activations (activation_code, user_id, payment_ref, payment_status, fee) VALUES (?,?,?,'SUCCESS',?)",
             [$code, $toUid, 'DEP-' . $code, ACTIVE_ID_FEE]);
+        // Paid from the D wallet, so the package is live at once: no approval or hold. Any older unpaid
+        // gateway request is cancelled so it can never be confirmed into a second package later.
+        DB::run("UPDATE lo_activations SET payment_status = 'CANCELLED' WHERE user_id = ? AND payment_status = 'PENDING'", [$toUid]);
+        DB::run('UPDATE lo_tree SET is_active = 1 WHERE user_id = ?', [$toUid]);
         DB::insert("INSERT INTO lo_deposits (deposit_code, user_id, kind, amount, target_user_id, activation_id, note) VALUES (?,?,'ACTIVATE_ID',?,?,?,?)",
             ['DEP-' . $code, $uid, -ACTIVE_ID_FEE, $toUid, $actId, 'Active New ID ' . $to['life_id']]);
         return ['activation_code' => $code, 'life_id' => $to['life_id'], 'amount' => ACTIVE_ID_FEE];
     });
-    Http::ok($out);
+    Http::ok($out + ['status' => 'ACTIVE']);
+});
+
+// Live lookup while typing on Active New ID: identity only (name, photo, ID, status), never wallet,
+// phone or NID data. Requires a signed-in member.
+$router->get('/api/member/activate-id/lookup', function () {
+    Auth::member();
+    $id = trim((string) ($_GET['id'] ?? ''));
+    if ($id === '' || mb_strlen($id) > 40) throw new HttpError('User ID required');
+    $u = DB::one('SELECT u.id, u.life_id, u.username, u.created_at, t.is_active, sp.life_id AS sponsor_life_id
+        FROM users u LEFT JOIN lo_tree t ON t.user_id = u.id LEFT JOIN users sp ON sp.id = t.sponsor_id
+        WHERE (u.life_id = ? OR u.username = ?) AND u.status <> "suspended" LIMIT 1', [$id, $id]);
+    if (!$u) throw new HttpError('User ID not found', 404);
+    $p = DB::one('SELECT name, district, photo_base64 FROM user_profiles WHERE user_id = ? ORDER BY id LIMIT 1', [(int) $u['id']]) ?? [];
+    $active = (bool) DB::one("SELECT id FROM lo_activations WHERE user_id = ? AND payment_status = 'SUCCESS' LIMIT 1", [(int) $u['id']]);
+    Http::ok([
+        'life_id' => $u['life_id'],
+        'username' => $u['username'],
+        'name' => $p['name'] ?? null,
+        'district' => $p['district'] ?? null,
+        'photo' => $p['photo_base64'] ?? null,
+        'sponsor_life_id' => $u['sponsor_life_id'],
+        'joined' => $u['created_at'],
+        'active' => $active,
+    ]);
 });
 
 // ---- E wallet -> D wallet swap: 4% charge on the selected amount, the rest is added to the D wallet ----
