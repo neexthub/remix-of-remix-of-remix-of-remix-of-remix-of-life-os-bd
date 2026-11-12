@@ -4,7 +4,7 @@ import { DataTable, fmtDate, Msg, Page, useMember } from "@/components/member-ki
 import { bdt, memberApi } from "@/lib/member-api";
 
 export const Route = createFileRoute("/member/activation")({
-  head: () => ({ meta: [{ title: "Package Activation — Life OS Member" }, { name: "description", content: "Activate your Life OS package." }, { property: "og:title", content: "Package Activation — Life OS Member" }, { property: "og:description", content: "Activate your Life OS package." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({ meta: [{ title: "ID Active — Life OS Member" }, { name: "description", content: "Activate your Life OS package." }, { property: "og:title", content: "ID Active — Life OS Member" }, { property: "og:description", content: "Activate your Life OS package." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: Activation,
 });
 
@@ -22,7 +22,7 @@ function Activation() {
     } catch (e) { setMsg({ ok: false, t: (e as Error).message }); }
   };
   return (
-    <Page title="Package Activation">
+    <Page title="ID Active">
       <Msg ok={msg?.ok} text={msg?.t ?? null} />
       <table width="50%" border={0} cellSpacing={10} cellPadding={0}>
         <tbody>

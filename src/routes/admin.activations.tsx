@@ -4,7 +4,7 @@ import { Page, DataTable, Msg, fmtDate, FilterBar, useAdmin } from "@/components
 import { adminApi } from "@/lib/admin-api";
 
 export const Route = createFileRoute("/admin/activations")({
-  head: () => ({ meta: [{ title: "Package Activation — Life OS Admin" }, { name: "description", content: "Confirm or reverse package activations." }, { property: "og:title", content: "Package Activation — Life OS Admin" }, { property: "og:description", content: "Confirm or reverse package activations." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({ meta: [{ title: "ID Active — Life OS Admin" }, { name: "description", content: "Confirm or reverse package activations." }, { property: "og:title", content: "ID Active — Life OS Admin" }, { property: "og:description", content: "Confirm or reverse package activations." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: Activations,
 });
 
@@ -32,7 +32,7 @@ function Activations() {
   };
 
   return (
-    <Page title="Package Activation" center>
+    <Page title="ID Active" center>
       <FilterBar value={applied} onChange={setApplied}>
         <b style={{ marginLeft: 16 }}>Status:</b>
         <select value={status} onChange={(e) => setStatus(e.target.value)}>

@@ -60,7 +60,7 @@ function ActiveNewId() {
     setBusy(true);
     try {
       const r = await memberApi<{ activation_code: string; life_id: string }>("/activate-id", { body: f });
-      setMsg({ ok: true, t: `ID ${r.life_id} activated (${r.activation_code}). The package is now active.` });
+      setMsg({ ok: true, t: `ID ${r.life_id} activated (${r.activation_code}). The ID is now active.` });
       setF({ ...f, receiver: "" });
       w.refetch();
     } catch (err) { setMsg({ ok: false, t: (err as Error).message }); }

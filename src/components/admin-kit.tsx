@@ -29,7 +29,7 @@ const MENU: { label: string; items: { to: string; label: string }[] }[] = [
       { to: "/admin/member-list", label: "Member List" },
       { to: "/admin/member-report", label: "Member Report" },
       { to: "/admin/joining-report", label: "Joining Report" },
-      { to: "/admin/activations", label: "Package Activation" },
+      { to: "/admin/activations", label: "ID Active" },
       { to: "/admin/balance-add", label: "Balance Add" },
     ],
   },
