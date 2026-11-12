@@ -89,7 +89,7 @@ function BalanceAdd() {
           {report.isLoading && <p>Loading…</p>}
           {!report.isLoading && rows.length === 0 && <Msg text="No balance additions found." />}
           {rows.length > 0 && (
-            <p style={{ textAlign: "right", fontWeight: 700 }}>
+            <p style={{ textAlign: "right", fontWeight: 700, paddingRight: 10 }}>
               Transactions: {rows.length} &nbsp;|&nbsp; D Wallet: {sum("DEPOSIT").toFixed(2)} &nbsp;|&nbsp; E Wallet: {sum("ADJUSTMENT").toFixed(2)} &nbsp;|&nbsp; Total: {sum().toFixed(2)}
             </p>
           )}
