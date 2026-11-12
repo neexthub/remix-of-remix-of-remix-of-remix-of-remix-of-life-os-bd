@@ -10,7 +10,7 @@ export const Route = createFileRoute("/member/tree")({
 
 type Node = {
   user_id: number; life_id: string; active: boolean; left_carry: number; right_carry: number;
-  full_name?: string | null; sponsor_life_id?: string | null; purchased?: number; left_total?: number; right_total?: number; matched?: number;
+  full_name?: string | null; sponsor_life_id?: string | null; purchased?: number; left_total?: number; right_total?: number; left_points?: number; right_points?: number; matched?: number;
   left: Node | null; right: Node | null;
 };
 type Slot = { n: Node | null; parent: Node | null; side: "L" | "R" | null };

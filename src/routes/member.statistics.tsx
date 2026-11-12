@@ -6,7 +6,7 @@ export const Route = createFileRoute("/member/statistics")({
   component: Stats,
 });
 
-type Node = { active: boolean; left_carry: number; right_carry: number; left: Node | null; right: Node | null };
+type Node = { active: boolean; left_carry: number; right_carry: number; left_points?: number; right_points?: number; left: Node | null; right: Node | null };
 const count = (n: Node | null): { all: number; active: number } => {
   if (!n) return { all: 0, active: 0 };
   const a = count(n.left), b = count(n.right);
