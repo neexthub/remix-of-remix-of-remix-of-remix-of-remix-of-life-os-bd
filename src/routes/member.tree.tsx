@@ -158,12 +158,14 @@ function Tree() {
       zoomTo(zoomRef.current * Math.exp(-dy * 0.002), x, y);
     };
     let pinch: { d: number; z: number } | null = null;
-    const dist = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const dist = (t: TouchList) => { const a = t.item(0), b = t.item(1); return a && b ? Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) : 1; };
     const onStart = (e: TouchEvent) => { if (e.touches.length === 2) pinch = { d: dist(e.touches), z: zoomRef.current }; };
     const onMove = (e: TouchEvent) => {
       if (!pinch || e.touches.length !== 2) return;
       e.preventDefault();
-      const [x, y] = local((e.touches[0].clientX + e.touches[1].clientX) / 2, (e.touches[0].clientY + e.touches[1].clientY) / 2);
+      const a = e.touches.item(0), b = e.touches.item(1);
+      if (!a || !b) return;
+      const [x, y] = local((a.clientX + b.clientX) / 2, (a.clientY + b.clientY) / 2);
       zoomTo(pinch.z * (dist(e.touches) / pinch.d), x, y);
     };
     const onEnd = (e: TouchEvent) => { if (e.touches.length < 2) pinch = null; };
