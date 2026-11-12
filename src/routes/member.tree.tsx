@@ -63,29 +63,8 @@ function Register({ parent, side }: { parent: Node; side: "L" | "R" }) {
   );
 }
 
-/** Recursive branch: every loaded level is drawn; deeper levels load on tap ("Show more"). */
-function Branch({ n, c }: { n: Node; c: Ctx }) {
-  const full = c.more[n.life_id] ?? n;
-  const unloaded = (full.has_left && !full.left) || (full.has_right && !full.right);
-  return (
-    <li>
-      <Person n={full} c={c} />
-      {unloaded ? (
-        <div className="bt-more">
-          <button type="button" onClick={() => c.loadMore(full)} disabled={!!c.loading[full.life_id]}>
-            {c.loading[full.life_id] ? "Loading…" : "▼ Show more"}
-          </button>
-        </div>
-      ) : (
-        <ul>
-          <li>{full.left ? <BranchInner n={full.left} c={c} /> : <Register parent={full} side="L" />}</li>
-          <li>{full.right ? <BranchInner n={full.right} c={c} /> : <Register parent={full} side="R" />}</li>
-        </ul>
-      )}
-    </li>
-  );
-}
-// The <li> wrapper is supplied by the parent so empty slots and members share the same connector lines.
+/** Recursive branch: every loaded level is drawn; deeper levels load on tap ("Show more").
+ * The <li> wrapper comes from the parent so empty slots and members share the same connector lines. */
 function BranchInner({ n, c }: { n: Node; c: Ctx }) {
   const full = c.more[n.life_id] ?? n;
   const unloaded = (full.has_left && !full.left) || (full.has_right && !full.right);
@@ -250,7 +229,7 @@ function Tree() {
           {!top ? (
             <p className="bt-empty-note">{q.isLoading ? "Loading…" : "No tree data yet."}</p>
           ) : (
-            <ul><Branch n={top} c={c} /></ul>
+            <ul><li><BranchInner n={top} c={c} /></li></ul>
           )}
         </div>
       </div>
