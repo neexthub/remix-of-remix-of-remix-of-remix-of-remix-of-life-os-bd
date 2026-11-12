@@ -153,6 +153,11 @@
 - [x] Push all pending work (tree, balance add report, auto username, these labels) to live lifeosbd.com and verify. Leftover QAI test accounts removed.
 
 # Live database reset with old data (2026-11-12)
+- [x] Compared both cPanel databases read-only: old 72,824 vs live 72,954; 71 old-only and 201 live-only accounts; 8,152 matching differences, 37 placement differences, 3 activation differences; shared user sponsor/rank columns agree. Old matching sum 176,079 vs live tree 4. Physical user_wallets columns all sum to zero (ledger-derived D/E balances not globally verified).
+- [x] Real member 89 browser checks at 393px and 1280px: 55 nodes, expansion to 70, zoom and horizontal scrolling work, fit after expansion works; 1,782 enrollment edges each match sponsor_id and direct count 12 matches DB. Tree still lazy-loads (not a whole-network overview). Dashboard incorrectly shows matching 0 vs legacy 8,596; rank displays new-plan name rather than original rank label.
+- [x] Correct future import to retain total_pairs in lo_tree.lifetime_matchings; 4 new legacy state tests, 2 deployment tests and 12 frontend tests pass. No live member/financial writes performed.
+- [ ] Decide preservation of the 201 live-only accounts and original-vs-new-plan rank labels before destructive reset; current installer SQL snapshot predates the live old database (71 old members missing), so do not run it as-is.
+- [ ] Refresh installer legacy SQL, back up live, run verified installation and set the requested admin password; remove installer after success.
 - [ ] Back up the live database and give the user a copy.
 - [ ] Empty the live database and run the setup installer with all old data.
 - [ ] Keep admin login, cron and merchant API settings working; remove "test" members.

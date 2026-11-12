@@ -11,7 +11,7 @@ migrated Life OS database (TARGET_DB) on the same local MariaDB server. Rules (u
 import os
 from collections import defaultdict
 
-import pymysql
+from legacy_state import tree_record
 
 LEGACY = os.environ.get("LEGACY_DB", "old_lifeos")
 TARGET = os.environ.get("TARGET_DB", "lifeos")
@@ -32,6 +32,7 @@ IMAGE_COLUMNS = {"photo_base64", "nid_front_base64", "nid_back_base64", "selfie_
 
 
 def connect():
+    import pymysql
     return pymysql.connect(unix_socket=SOCK, user="root", database=TARGET, charset="utf8mb4", autocommit=False)
 
 
@@ -148,16 +149,17 @@ def main():
     root, placed, child, moved = build_tree(rows)
     cur.execute("SELECT life_id, id FROM users")
     by_life = dict(cur.fetchall())
-    cur.execute("SELECT id, status FROM users")
-    status = dict(cur.fetchall())
+    cur.execute("SELECT id, status, total_pairs FROM users")
+    state = {uid: (status, pairs) for uid, status, pairs in cur.fetchall()}
     tree = []
     for uid, _, _, ref in rows:
         parent, side = placed[uid]
         sponsor = None if uid == root else by_life.get(ref) if ref else None
         if uid != root and sponsor is None:
             sponsor = root
-        tree.append((uid, sponsor, parent, side, child.get((uid, "L")), child.get((uid, "R")), 1 if status[uid] == "active" else 0))
-    cur.executemany("INSERT INTO lo_tree (user_id, sponsor_id, placement_parent_id, placement_side, left_child_id, right_child_id, is_active) VALUES (%s,%s,%s,%s,%s,%s,%s)", tree)
+        status, pairs = state[uid]
+        tree.append(tree_record(uid, sponsor, parent, side, child.get((uid, "L")), child.get((uid, "R")), status, pairs))
+    cur.executemany("INSERT INTO lo_tree (user_id, sponsor_id, placement_parent_id, placement_side, left_child_id, right_child_id, is_active, lifetime_matchings) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)", tree)
     for uid, _, new_parent, s in moved:
         cur.execute("UPDATE users SET placement_id=%s, position=%s WHERE id=%s", (new_parent, "left" if s == "L" else "right", uid))
 
