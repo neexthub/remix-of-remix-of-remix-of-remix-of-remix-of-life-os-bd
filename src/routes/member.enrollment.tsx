@@ -173,10 +173,8 @@ function Enrollment() {
       <div style={{ padding: "8px 0", textAlign: "center" }} role="region" aria-label="Enrollment genealogy tree" tabIndex={0}>
         {tree.isLoading && <span>Loading…</span>}
         {tree.data && (() => {
-          // You centered on screen; every downline user in one scrollable row below.
-          const all: ENode[] = [];
-          const walk = (n: ENode) => n.children.forEach((c) => { all.push(c); walk(c); });
-          walk(tree.data);
+          // You centered on screen; only members you sponsored directly, in one scrollable row below.
+          const all: ENode[] = tree.data.children;
           return (
             <>
               <div className="eo-tree" style={{ minWidth: 0 }}>
