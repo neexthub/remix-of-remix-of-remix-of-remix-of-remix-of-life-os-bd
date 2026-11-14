@@ -160,7 +160,8 @@ $rr = api('GET', '/api/member/rank', null, $B['token'])['json']['data'];
 check('B rank Member at one matching', ($rr['current']['name'] ?? '') === 'Member', json_encode($rr['current'] ?? null));
 check('B lifetime matchings = 1', ($rr['lifetime_matchings'] ?? 0) === 1, 'got ' . ($rr['lifetime_matchings'] ?? 0));
 $rr = api('GET', '/api/member/rank', null, $tokenA)['json']['data'];
-check('A has no rank row yet (never earned a matching)', ($rr['current'] ?? []) === null || $rr['current'] === null, json_encode($rr['current'] ?? null));
+// Rank follows the approved Total Matching: an active account with 0 matchings holds the base rank (old-site "Active Account").
+check('Active A without matching holds only the base Member rank', ($rr['current']['name'] ?? '') === 'Member' && ($rr['lifetime_matchings'] ?? -1) === 0, json_encode($rr));
 
 // ---- Volume provenance: consumed pairs trace back to their source sales ----
 $pair = DB::one('SELECT * FROM lo_volume_pairs WHERE beneficiary_id = ? AND tree_type = "BINARY"', [$B['id']]);
