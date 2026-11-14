@@ -1,3 +1,9 @@
+# Old-site full data + daily closing plan (2026-11-14)
+- [x] Instant direct referral; generation (GEN-01..GEN-10) + enrollment/binary matching only at the Dhaka-midnight daily closing; one final matching credit per sale; Total = Rank Matching counts approved matching; Major carry kept, Minor counter reset; system error log. Tests: 143 API + 26 closing + plan simulation.
+- [x] Member dashboard (member/genealogy/matching/commission), separate binary/enrollment matching, GEN levels; admin Daily Closing & Errors and audited Placement Correction pages.
+- [x] Rebuild procedure (rebuild_v3.py + verify_v3.py) rehearsed locally on the full old-site database: every old table/row kept, wallets/loans/images exact, new-site edits of old members kept, post-restore members removed.
+- [ ] Live: build lifeosbd_v3, deploy backend, switch database, finish step, verify, turn on midnight payout, deploy frontend, real-member browser check.
+
 # Full binary tree and legacy member reconciliation (2026-11-12)
 - [x] Compared all 72,824 members: rank, matching and activation agree; repaired five sponsors whose old codes contain invisible direction markers. All 37 normalized duplicate-slot placements remain in the original parent's same-side subtree; every member reachable with consistent pointers. Original duplicate slots cannot be recreated in a binary tree without dropping a member. No balances or payouts changed.
 - [x] Replaced Show more with a complete, zoomable canvas overview and viewport-driven member controls; active-only popup counts tested against real 42,604-member downline (8,596 left / 21,063 right active). Deep member search, phone/desktop, popup and zoom controls tested in preview against the actual live PHP API, with zero browser errors.
