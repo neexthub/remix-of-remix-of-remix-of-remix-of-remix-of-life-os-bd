@@ -180,11 +180,12 @@ def finish():
             SELECT CONCAT('{tag}', w.user_id), w.user_id, 'CASHBACK', w.`{column}`, '{label}'
             FROM `{NEW}`.user_wallets w JOIN `{NEW}`.users u ON u.id = w.user_id WHERE w.`{column}` > 0""")
         print(f"{label}: {n} rows")
-    for column, label in (("balance", "Old site main balance"), ("pending_balance", "Old site pending balance"), ("frozen_balance", "Old site frozen balance")):
-        n = X.run(f"""INSERT IGNORE INTO `{NEW}`.lo_ledger (payout_code, user_id, ledger_type, amount, note)
-            SELECT CONCAT('OLD-{column.upper()}-', w.user_id), w.user_id, 'ADJUSTMENT', w.`{column}`, '{label}'
-            FROM `{NEW}`.user_wallets w JOIN `{NEW}`.users u ON u.id = w.user_id WHERE w.`{column}` > 0""")
-        print(f"{label}: {n} rows")
+    # Old main balance is withdrawable; pending/frozen old balances must be zero (verified) or reviewed by hand.
+    n = X.run(f"""INSERT IGNORE INTO `{NEW}`.lo_ledger (payout_code, user_id, ledger_type, amount, note)
+        SELECT CONCAT('OLD-BALANCE-', w.user_id), w.user_id, 'ADJUSTMENT', w.balance, 'Old site main balance'
+        FROM `{NEW}`.user_wallets w JOIN `{NEW}`.users u ON u.id = w.user_id WHERE w.balance > 0""")
+    held = X.rows(f"SELECT COUNT(*) AS n FROM `{NEW}`.user_wallets WHERE pending_balance <> 0 OR frozen_balance <> 0 OR balance < 0")[0]["n"]
+    print(f"Old site main balance: {n} rows; wallets with pending/frozen/negative needing review: {held}")
     print("finish complete")
 
 
