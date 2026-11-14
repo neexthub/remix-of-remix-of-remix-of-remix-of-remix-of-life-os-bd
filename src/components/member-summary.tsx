@@ -89,7 +89,7 @@ export function MatchingInformation() {
 
   return (
     <section>
-      <h3>Matching Information</h3>
+      <h3 style={{ marginTop: 24, marginBottom: 10 }}>Matching Information</h3>
       {q.isPending && <p>Loading matching information…</p>}
       {q.error && <p role="alert">{q.error.message}</p>}
       {d && (
@@ -135,7 +135,7 @@ export function MemberDashboardSummary() {
   return (
     <>
       <section>
-        <h3>Member Information</h3>
+        <h3 style={{ marginTop: 24, marginBottom: 10 }}>Member Information</h3>
         {q.isPending && <p>Loading member information…</p>}
         {q.error && <p role="alert">{q.error.message}</p>}
         {d && (
@@ -162,7 +162,7 @@ export function MemberDashboardSummary() {
       </section>
 
       <section>
-        <h3>Genealogy Information</h3>
+        <h3 style={{ marginTop: 24, marginBottom: 10 }}>Genealogy Information</h3>
         {d && (
           <DataTable
             head={["Description", "Details"]}
@@ -198,7 +198,7 @@ export function MemberDashboardSummary() {
       <MatchingInformation />
 
       <section>
-        <h3>Commission Information</h3>
+        <h3 style={{ marginTop: 24, marginBottom: 10 }}>Commission Information</h3>
         {commission && (
           <DataTable
             head={["Description", "Amount"]}
@@ -227,7 +227,7 @@ export function GenerationCommission() {
 
   return (
     <section>
-      <h3>Generation Commission (10 levels)</h3>
+      <h3 style={{ marginTop: 24, marginBottom: 10 }}>Generation Commission (10 levels)</h3>
       {q.isPending && <p>Loading generation commission…</p>}
       {q.error && <p role="alert">{q.error.message}</p>}
       {q.data && (
