@@ -649,8 +649,14 @@ $router->post('/api/member/activate-id', function () {
         DB::run('UPDATE lo_tree SET is_active = 1 WHERE user_id = ?', [$toUid]);
         DB::insert("INSERT INTO lo_deposits (deposit_code, user_id, kind, amount, target_user_id, activation_id, note) VALUES (?,?,'ACTIVATE_ID',?,?,?,?)",
             ['DEP-' . $code, $uid, -ACTIVE_ID_FEE, $toUid, $actId, 'Active New ID ' . $to['life_id']]);
-        return ['activation_code' => $code, 'life_id' => $to['life_id'], 'amount' => ACTIVE_ID_FEE];
+        return ['activation_code' => $code, 'life_id' => $to['life_id'], 'amount' => ACTIVE_ID_FEE, 'activation_id' => $actId];
     });
+    // Direct referral is paid at once; generation and matching wait for the midnight closing.
+    // If this instant step fails, the minute runner retries it (activation stays SUCCESS + unprocessed).
+    if (\LifeOS\Engine\Commission::instantEnabled()) {
+        try { \LifeOS\Engine\Commission::processActivation((int) $out['activation_id']); } catch (\Throwable $ignored) {}
+    }
+    unset($out['activation_id']);
     Http::ok($out + ['status' => 'ACTIVE']);
 });
 

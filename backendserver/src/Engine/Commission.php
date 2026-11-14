@@ -131,6 +131,13 @@ final class Commission
         });
     }
 
+    /** Commission payouts run only with server opt-in AND the admin's financial release approval. */
+    public static function instantEnabled(): bool
+    {
+        return \LifeOS\Config::get('commission_cron_enabled', false) === true
+            && DB::val("SELECT v FROM lo_settings WHERE k='financial_release_approved'") === '1';
+    }
+
     /** System error log: an activation that did not produce an expected commission is recorded once per code. */
     public static function logError(?int $activationId, ?int $userId, string $code, string $message): void
     {
