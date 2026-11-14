@@ -63,13 +63,13 @@ Settlement::run(true);
 check('Failed payment never pays commission', ledger($root, 'REFERRAL') === 0.0);
 
 $actA = pay($a);
-try { DB::insert('INSERT INTO lo_activations (activation_code, user_id, payment_ref, payment_status) VALUES (?,?,?,?)', ['ACT-DUP', $a, 'TRX-DC2', 'SUCCESS']); $dup = false; }
+try { DB::insert('INSERT INTO lo_activations (activation_code, user_id, payment_ref, payment_status) VALUES (?,?,?,?)', ['ACT-DUP', $a, 'TRX-DC3', 'SUCCESS']); $dup = false; }
 catch (\PDOException $e) { $dup = true; }
 check('Same Transaction ID cannot be used twice', $dup);
 Settlement::run(true);
 $rowA = DB::one('SELECT * FROM lo_activations WHERE id = ?', [$actA]);
 check('SUCCESS payment activates at once (Pending -> Active)', (int) DB::val('SELECT is_active FROM lo_tree WHERE user_id = ?', [$a]) === 1);
-check('Activation time, date, Transaction ID and status stored', $rowA['processed_at'] !== null && $rowA['business_date'] !== null && $rowA['payment_ref'] === 'TRX-DC2' && $rowA['payment_status'] === 'SUCCESS');
+check('Activation time, date, Transaction ID and status stored', $rowA['processed_at'] !== null && $rowA['business_date'] !== null && $rowA['payment_ref'] === 'TRX-DC3' && $rowA['payment_status'] === 'SUCCESS');
 check('Direct referral ৳200 paid instantly', ledger($root, 'REFERRAL') === 200.0, (string) ledger($root, 'REFERRAL'));
 Commission::processActivation($actA);
 check('Replay of the same activation never pays twice', ledger($root, 'REFERRAL') === 200.0 && (int) DB::val('SELECT COUNT(*) FROM lo_sales WHERE activation_id = ?', [$actA]) === 1);
