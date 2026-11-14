@@ -198,7 +198,7 @@ final class Commission
     {
         $legUser = $userId;
         $cur = $sponsorId;
-        $depth = 500;
+        $depth = 20000; // cycle guard only: every sponsor generation must receive volume
         while ($cur !== null && $depth-- > 0) {
             $up = DB::one('SELECT is_active, sponsor_id FROM lo_tree WHERE user_id = ? FOR UPDATE', [$cur]);
             if (!$up || !(int) $up['is_active']) break; // inactive sponsor: nothing contributes upward

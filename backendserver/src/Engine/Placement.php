@@ -116,7 +116,7 @@ final class Placement
     }
 
     /** Upline chain via placement parents (for binary volume propagation). */
-    public static function binaryUpline(int $userId, int $maxDepth = 500): array
+    public static function binaryUpline(int $userId, int $maxDepth = 20000): array
     {
         $chain = [];
         $cur = DB::one('SELECT placement_parent_id, placement_side FROM lo_tree WHERE user_id = ?', [$userId]);
