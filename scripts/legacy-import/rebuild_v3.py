@@ -140,18 +140,18 @@ def build():
 
     # Old-site legacy user columns (loans, points, counters) restored exactly.
     ucols = [c for c in OLD_USER_COLUMNS if c in cols(NEW, "users") and c in cols(OLD, "users")]
-    X.run(f"UPDATE `{NEW}`.users n JOIN `{OLD}`.users o ON o.id = n.id SET " + ", ".join(f"n.`{c}` = o.`{c}`" for c in ucols))
+    X.run(f"UPDATE `{NEW}`.users n JOIN `{OLD}`.users o ON o.id = n.id SET " + ", ".join(f"n.`{c}` = o.`{c}`" for c in ucols) + ", n.updated_at = n.updated_at")
     # Profile images from the old site, unless the member uploaded a new one on the new site.
     latest = (f"SELECT p.* FROM `{OLD}`.user_profiles p JOIN (SELECT id FROM (SELECT id, ROW_NUMBER() OVER "
               f"(PARTITION BY user_id ORDER BY updated_at DESC, id DESC) rn FROM `{OLD}`.user_profiles) x WHERE rn = 1) k ON k.id = p.id")
     img = [c for c in IMAGE_COLUMNS if c in cols(NEW, "user_profiles")]
     for start in range(0, MAX_OLD + 1, 1500):
         X.run(f"UPDATE `{NEW}`.user_profiles n JOIN ({latest} WHERE p.user_id >= {start} AND p.user_id < {start + 1500}) o ON o.user_id = n.user_id SET "
-              + ", ".join(f"n.`{c}` = COALESCE(n.`{c}`, o.`{c}`)" for c in img))
+              + ", ".join(f"n.`{c}` = COALESCE(n.`{c}`, o.`{c}`)" for c in img) + ", n.updated_at = n.updated_at")
     # Second pass: an image kept only on an older duplicate profile row is still carried over.
     for start in range(0, MAX_OLD + 1, 1500):
         X.run(f"UPDATE `{NEW}`.user_profiles n JOIN `{OLD}`.user_profiles o ON o.user_id = n.user_id AND o.user_id >= {start} AND o.user_id < {start + 1500} SET "
-              + ", ".join(f"n.`{c}` = COALESCE(n.`{c}`, o.`{c}`)" for c in img))
+              + ", ".join(f"n.`{c}` = COALESCE(n.`{c}`, o.`{c}`)" for c in img) + ", n.updated_at = n.updated_at")
     # Old admin accounts/roles are archived (they can never sign in to the new admin panel).
     for t in ("admin_users", "admin_roles"):
         X.run(f"CREATE TABLE IF NOT EXISTS `{NEW}`.legacy_{t} LIKE `{OLD}`.{t}")
@@ -161,6 +161,25 @@ def build():
     X.run(f"INSERT IGNORE INTO `{NEW}`.legacy_user_profiles_history SELECT p.* FROM `{OLD}`.user_profiles p WHERE p.id NOT IN "
           f"(SELECT id FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY updated_at DESC, id DESC) rn FROM `{OLD}`.user_profiles) x WHERE rn = 1)")
     print("build complete")
+
+
+def sync():
+    """Right before the switch: member edits made on the current site during the build are copied again,
+    and every updated_at is restored from the current site (build-time UPDATEs must not alter it)."""
+    since = os.environ["SINCE"]
+    for t, key in (("users", "id"), ("user_profiles", "id")):
+        skip = {key, "updated_at"} | (set(OLD_USER_COLUMNS) if t == "users" else set(IMAGE_COLUMNS))
+        common = [c for c in cols(NEW, t) if c in set(cols(CUR, t)) and c not in skip]
+        sets = ", ".join(f"n.`{c}` = c.`{c}`" for c in common)
+        if t == "user_profiles":
+            sets += ", " + ", ".join(f"n.`{c}` = COALESCE(c.`{c}`, n.`{c}`)" for c in IMAGE_COLUMNS if c in common or c in cols(NEW, t))
+        n = X.run(f"UPDATE `{NEW}`.`{t}` n JOIN `{CUR}`.`{t}` c ON c.`{key}` = n.`{key}` SET {sets}, n.updated_at = c.updated_at WHERE c.updated_at >= '{since}'")
+        print(f"  {t}: {n} rows edited since {since} re-synced")
+        for start in range(0, MAX_OLD + 2000, 20000):
+            X.run(f"UPDATE `{NEW}`.`{t}` n JOIN `{CUR}`.`{t}` c ON c.`{key}` = n.`{key}` SET n.updated_at = c.updated_at WHERE n.`{key}` >= {start} AND n.`{key}` < {start + 20000} AND n.updated_at <> c.updated_at")
+    for t in ("lo_activations", "lo_deposits", "lo_admin_audit"):
+        n = copy(CUR, t, f"WHERE user_id <= {MAX_OLD}")
+    print("sync complete")
 
 
 def finish():
@@ -198,4 +217,4 @@ def finish():
 
 
 if __name__ == "__main__":
-    {"build": build, "finish": finish}[sys.argv[1]]()
+    {"build": build, "sync": sync, "finish": finish}[sys.argv[1]]()
