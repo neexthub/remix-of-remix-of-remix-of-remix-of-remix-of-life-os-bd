@@ -26,7 +26,8 @@ for t in R.tables(OLD):
     if t in ("admin_users", "admin_roles"):
         b = R.count(NEW, f"legacy_{t}")
     if t == "user_profiles":
-        b += R.count(NEW, "legacy_user_profiles_history")
+        # plus one blank profile created for each member who had no profile on the old site
+        b += R.count(NEW, "legacy_user_profiles_history") - int(val(f"SELECT COUNT(*) FROM `{NEW}`.users u WHERE NOT EXISTS (SELECT 1 FROM `{OLD}`.user_profiles p WHERE p.user_id = u.id)"))
     if a != b:
         diff.append(f"{t} old={a} new={b}")
 check("every old-site table has all its rows", not diff, "; ".join(diff[:8]))
