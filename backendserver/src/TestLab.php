@@ -13,7 +13,7 @@ final class TestLab
 {
     public const TABLES = ['lo_volume_pairs', 'lo_volumes', 'lo_matching_decisions', 'lo_matching_events', 'lo_matching_bills',
         'lo_daily_caps', 'lo_statements', 'lo_ledger', 'lo_allocations', 'lo_pool_movements', 'lo_sales', 'lo_activations',
-        'lo_enroll_legs', 'lo_user_ranks', 'lo_withdrawals', 'lo_transfers', 'lo_recharges'];
+        'lo_enroll_legs', 'lo_user_ranks', 'lo_withdrawals', 'lo_transfers', 'lo_recharges', 'lo_daily_volume', 'lo_daily_closings', 'lo_system_errors'];
 
     /** Browser-generated id of the action being run, so the progress bar never shows another action's record. */
     public static string $runId = '';
