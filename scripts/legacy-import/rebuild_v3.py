@@ -103,14 +103,14 @@ def copy(src, t, where="", key=None):
 
 
 def build():
-    if tables(NEW):
-        sys.exit(f"{NEW} is not empty; refusing")
+    if tables(NEW) and os.environ.get("RESUME") != "1":
+        sys.exit(f"{NEW} is not empty; refusing (RESUME=1 continues an interrupted build; every step is idempotent)")
     cur_t, old_t = tables(CUR), tables(OLD)
     for t in cur_t:
-        X.run(f"CREATE TABLE `{NEW}`.`{t}` LIKE `{CUR}`.`{t}`")
+        X.run(f"CREATE TABLE IF NOT EXISTS `{NEW}`.`{t}` LIKE `{CUR}`.`{t}`")
     for t in old_t:
         if t not in cur_t:
-            X.run(f"CREATE TABLE `{NEW}`.`{t}` LIKE `{OLD}`.`{t}`")
+            X.run(f"CREATE TABLE IF NOT EXISTS `{NEW}`.`{t}` LIKE `{OLD}`.`{t}`")
     print(f"created {len(set(cur_t) | set(old_t))} tables")
 
     # New-site data (engine tables, admin, settings, audit): only rows of old members are kept.
@@ -154,11 +154,11 @@ def build():
               + ", ".join(f"n.`{c}` = COALESCE(n.`{c}`, o.`{c}`)" for c in img))
     # Old admin accounts/roles are archived (they can never sign in to the new admin panel).
     for t in ("admin_users", "admin_roles"):
-        X.run(f"CREATE TABLE `{NEW}`.legacy_{t} LIKE `{OLD}`.{t}")
-        X.run(f"INSERT INTO `{NEW}`.legacy_{t} SELECT * FROM `{OLD}`.{t}")
+        X.run(f"CREATE TABLE IF NOT EXISTS `{NEW}`.legacy_{t} LIKE `{OLD}`.{t}")
+        X.run(f"INSERT IGNORE INTO `{NEW}`.legacy_{t} SELECT * FROM `{OLD}`.{t}")
     # Older duplicate profile rows of the old site are archived, never dropped.
-    X.run(f"CREATE TABLE `{NEW}`.legacy_user_profiles_history LIKE `{OLD}`.user_profiles")
-    X.run(f"INSERT INTO `{NEW}`.legacy_user_profiles_history SELECT p.* FROM `{OLD}`.user_profiles p WHERE p.id NOT IN "
+    X.run(f"CREATE TABLE IF NOT EXISTS `{NEW}`.legacy_user_profiles_history LIKE `{OLD}`.user_profiles")
+    X.run(f"INSERT IGNORE INTO `{NEW}`.legacy_user_profiles_history SELECT p.* FROM `{OLD}`.user_profiles p WHERE p.id NOT IN "
           f"(SELECT id FROM (SELECT id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY updated_at DESC, id DESC) rn FROM `{OLD}`.user_profiles) x WHERE rn = 1)")
     print("build complete")
 
