@@ -101,11 +101,19 @@ $sales = DB::all("SELECT s.id, s.user_id, s.activation_id FROM lo_sales s JOIN l
 $GEN = [1 => 50, 2 => 30, 3 => 25, 4 => 20, 5 => 18, 6 => 15, 7 => 12, 8 => 10, 9 => 10, 10 => 10];
 $exp = []; $add = function (int $u, string $t, float $a) use (&$exp) { $exp[$u][$t] = ($exp[$u][$t] ?? 0) + $a; };
 $daily = []; $isActive = []; $carry = []; $legs = []; $saleMatch = [];
+// Instant phase (payment order): cashback + direct referral only if the sponsor is already active.
 foreach ($sales as $s) {
-    $u = (int) $s['user_id']; $sid = (int) $s['id']; $isActive[$u] = true;
+    $u = (int) $s['user_id']; $isActive[$u] = true;
     $add($u, 'CASHBACK', 100);
     $sp = $tree[$u]['sponsor_id'] !== null ? (int) $tree[$u]['sponsor_id'] : null;
     if ($sp !== null && !empty($isActive[$sp])) $add($sp, 'REFERRAL', 200);
+}
+// Dhaka-midnight closing: the day's data is frozen, so everyone activated that day is active;
+// activations are closed in activation order (generation + matching).
+usort($sales, fn ($a, $b) => (int) $a['activation_id'] <=> (int) $b['activation_id']);
+foreach ($sales as $s) {
+    $u = (int) $s['user_id']; $sid = (int) $s['id'];
+    $sp = $tree[$u]['sponsor_id'] !== null ? (int) $tree[$u]['sponsor_id'] : null;
     $cur = $sp; $blocked = false;
     for ($g = 1; $g <= 10 && $cur !== null; $g++) {
         if (empty($isActive[$cur])) $blocked = true;
