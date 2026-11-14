@@ -33,7 +33,16 @@ function api(string $method, string $path, ?array $body = null, ?string $token =
     $raw = curl_exec($ch);
     $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    // These scenario checks expect each sale's full result, so every payment is followed by its midnight
+    // closing (generation + matching). Deferred-closing behaviour itself is covered by daily_closing_test.php.
+    if ($method === 'POST' && preg_match('#^/api/(admin/activations/\d+/confirm|member/activate-id)$#', $path)) closeOpenActivations();
     return ['status' => $status, 'json' => json_decode((string) $raw, true) ?? [], 'raw' => (string) $raw];
+}
+
+function closeOpenActivations(): void {
+    // The member flow may leave the instant step to the minute runner; run it before closing.
+    foreach (\LifeOS\DB::all("SELECT id FROM lo_activations WHERE payment_status = 'SUCCESS' AND processed = 0 ORDER BY id") as $a) \LifeOS\Engine\Commission::processActivation((int) $a['id']);
+    foreach (\LifeOS\DB::all('SELECT id FROM lo_activations WHERE processed = 1 AND closed = 0 ORDER BY id') as $a) \LifeOS\Engine\Commission::closeActivation((int) $a['id']);
 }
 
 function master(string $method, string $path, ?array $body = null, ?string $key = MASTER_KEY, ?int $tsOverride = null): array {
