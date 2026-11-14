@@ -148,6 +148,14 @@ def build():
     for start in range(0, MAX_OLD + 1, 1500):
         X.run(f"UPDATE `{NEW}`.user_profiles n JOIN ({latest} WHERE p.user_id >= {start} AND p.user_id < {start + 1500}) o ON o.user_id = n.user_id SET "
               + ", ".join(f"n.`{c}` = COALESCE(n.`{c}`, o.`{c}`)" for c in img))
+    # Second pass: an image kept only on an older duplicate profile row is still carried over.
+    for start in range(0, MAX_OLD + 1, 1500):
+        X.run(f"UPDATE `{NEW}`.user_profiles n JOIN `{OLD}`.user_profiles o ON o.user_id = n.user_id AND o.user_id >= {start} AND o.user_id < {start + 1500} SET "
+              + ", ".join(f"n.`{c}` = COALESCE(n.`{c}`, o.`{c}`)" for c in img))
+    # Old admin accounts/roles are archived (they can never sign in to the new admin panel).
+    for t in ("admin_users", "admin_roles"):
+        X.run(f"CREATE TABLE `{NEW}`.legacy_{t} LIKE `{OLD}`.{t}")
+        X.run(f"INSERT INTO `{NEW}`.legacy_{t} SELECT * FROM `{OLD}`.{t}")
     # Older duplicate profile rows of the old site are archived, never dropped.
     X.run(f"CREATE TABLE `{NEW}`.legacy_user_profiles_history LIKE `{OLD}`.user_profiles")
     X.run(f"INSERT INTO `{NEW}`.legacy_user_profiles_history SELECT p.* FROM `{OLD}`.user_profiles p WHERE p.id NOT IN "
