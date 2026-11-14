@@ -569,11 +569,23 @@ $router->get('/api/member/summary', function () {
             'count' => (int) ($levels[$level]['n'] ?? 0), 'amount' => (float) ($levels[$level]['s'] ?? 0)];
     }
     // Pending: tonight's generation for today's (not yet closed) activations in my 10-level sponsor downline.
+    // Walks all open activations up ten sponsor levels together (one query per level).
     $pendingGen = 0.0;
-    foreach (DB::all("SELECT user_id FROM lo_activations WHERE processed = 1 AND closed = 0 AND payment_status = 'SUCCESS' LIMIT 2000") as $a) {
-        $chain = \LifeOS\Engine\Placement::sponsorUpline((int) $a['user_id'], 10);
-        $pos = array_search($uid, $chain, true);
-        if ($pos !== false) $pendingGen += (float) (\LifeOS\Engine\Plan::GENERATION[$pos + 1] ?? 0);
+    $at = array_map(fn ($r) => (int) $r['user_id'], DB::all("SELECT user_id FROM lo_activations WHERE processed = 1 AND closed = 0 AND payment_status = 'SUCCESS' LIMIT 5000"));
+    for ($level = 1; $level <= 10 && $at; $level++) {
+        $sponsorOf = [];
+        foreach (array_chunk(array_values(array_unique($at)), 500) as $chunk) {
+            $marks = implode(',', array_fill(0, count($chunk), '?'));
+            foreach (DB::all("SELECT user_id, sponsor_id FROM lo_tree WHERE user_id IN ($marks)", $chunk) as $r) $sponsorOf[(int) $r['user_id']] = $r['sponsor_id'] !== null ? (int) $r['sponsor_id'] : null;
+        }
+        $next = [];
+        foreach ($at as $id) {
+            $sp = $sponsorOf[$id] ?? null;
+            if ($sp === null) continue;
+            if ($sp === $uid) $pendingGen += (float) \LifeOS\Engine\Plan::GENERATION[$level];
+            else $next[] = $sp;
+        }
+        $at = $next;
     }
     $legacyBin = (int) ($t['legacy_binary_matchings'] ?? 0);
     $legacyEnr = (int) ($t['legacy_enrollment_matchings'] ?? 0);
