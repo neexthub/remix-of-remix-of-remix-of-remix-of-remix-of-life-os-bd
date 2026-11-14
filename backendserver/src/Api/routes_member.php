@@ -545,6 +545,8 @@ $router->get('/api/member/summary', function () {
     $parent = !empty($t['placement_parent_id']) ? DB::one("SELECT x.life_id, $nameSql AS name FROM users x WHERE x.id = ?", [(int) $t['placement_parent_id']]) : null;
     $act = DB::one("SELECT activation_code, payment_ref, payment_status, created_at, processed_at, business_date, closed
                     FROM lo_activations WHERE user_id = ? AND payment_status = 'SUCCESS' ORDER BY id LIMIT 1", [$uid]);
+    // Imported old-site activations keep their original activation time; processed_at is the import time.
+    if ($act) $act['activated_at'] = str_starts_with((string) $act['activation_code'], 'LEGACY-') ? $act['created_at'] : ($act['processed_at'] ?? $act['created_at']);
     $ev = [];
     foreach (DB::all("SELECT selected_type t, COUNT(*) n, COALESCE(SUM(actual_payout),0) s FROM lo_matching_events
                       WHERE beneficiary_id = ? AND payout_status = 'PAID' GROUP BY selected_type", [$uid]) as $r) $ev[$r['t']] = $r;

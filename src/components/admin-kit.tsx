@@ -15,6 +15,7 @@ const MENU: { label: string; items: { to: string; label: string }[] }[] = [
       { to: "/admin", label: "Dashboard (Company Info)" },
       { to: "/admin/site-config", label: "Site Config" },
       { to: "/admin/cron", label: "Cron Setup" },
+      { to: "/admin/daily-closing", label: "Daily Closing & Errors" },
       { to: "/admin/cashback-api", label: "Cashback API Setup" },
       { to: "/admin/test-lab", label: "Test Lab (1-Day Run)" },
       { to: "/admin/plan", label: "Plan & Ranks" },
@@ -27,6 +28,7 @@ const MENU: { label: string; items: { to: string; label: string }[] }[] = [
     label: "Member Block",
     items: [
       { to: "/admin/member-list", label: "Member List" },
+      { to: "/admin/placement", label: "Placement Correction" },
       { to: "/admin/member-report", label: "Member Report" },
       { to: "/admin/joining-report", label: "Joining Report" },
       { to: "/admin/activations", label: "ID Active" },

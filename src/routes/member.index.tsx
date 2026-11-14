@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { MemberDashboardSummary } from "@/components/member-summary";
 import { useEffect, useState, type ReactNode } from "react";
 import { referralJoinUrl, type JoinTeam } from "@/lib/join-fields";
 import { Page, useMember } from "@/components/member-kit";
@@ -134,6 +135,7 @@ function Dashboard() {
           </tr>
         </tbody>
       </table>
+      <MemberDashboardSummary />
     </Page>
   );
 }
