@@ -18,6 +18,7 @@ export type MemberSummary = {
       payment_status: string | null;
       created_at: string | null;
       processed_at: string | null;
+      activated_at?: string | null;
       business_date: string | null;
       closed: boolean;
     } | null;
@@ -152,7 +153,7 @@ export function MemberDashboardSummary() {
               ],
               ["Activation Status", member?.active ? "Active" : "Pending"],
               ["Joining Date", member?.joined_at ?? "—"],
-              ["Activation Date", activation?.processed_at ?? "—"],
+              ["Activation Date", activation?.activated_at ?? activation?.processed_at ?? "—"],
               ["Transaction ID", activation?.payment_ref ?? "—"],
               ["Payment Status", activation?.payment_status ?? "—"],
             ]}
