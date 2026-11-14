@@ -458,3 +458,107 @@ $router->get('/api/admin/me', function () {
     // Sliding renewal: an admin who keeps using the panel is never signed out.
     Http::ok(['id' => (int) $admin['id'], 'name' => $admin['name'], 'email' => $admin['email'], 'token' => Auth::issue('a', (int) $admin['id'])]);
 });
+
+// ---------- Daily closing, system error log and audited placement corrections ----------
+$router->get('/api/admin/daily-closings', function () {
+    Auth::admin();
+    Http::ok([
+        'closings' => DB::all('SELECT * FROM lo_daily_closings ORDER BY closing_date DESC LIMIT 60'),
+        'open_today' => (int) DB::val("SELECT COUNT(*) FROM lo_activations WHERE processed = 1 AND closed = 0"),
+        'waiting_payment_step' => (int) DB::val("SELECT COUNT(*) FROM lo_activations WHERE payment_status = 'SUCCESS' AND processed = 0"),
+    ]);
+});
+
+$router->get('/api/admin/system-errors', function () {
+    Auth::admin();
+    Http::ok(DB::all('SELECT e.*, u.life_id FROM lo_system_errors e LEFT JOIN users u ON u.id = e.user_id ORDER BY e.id DESC LIMIT 300'));
+});
+
+function adminMemberId(string $ref): int
+{
+    $ref = trim($ref);
+    if ($ref === '' || mb_strlen($ref) > 40) throw new HttpError('Account ID required', 422);
+    $id = DB::val('SELECT id FROM users WHERE life_id = ? OR username = ? ORDER BY id LIMIT 1', [$ref, $ref]);
+    if ($id === false || $id === null) throw new HttpError("Account $ref not found", 404);
+    return (int) $id;
+}
+
+/** True when $candidate sits inside $root's placement (binary) subtree, including $root itself. */
+function inPlacementSubtree(int $root, int $candidate): bool
+{
+    $cur = $candidate; $guard = 0;
+    while ($cur && $guard++ < 200000) {
+        if ($cur === $root) return true;
+        $cur = (int) (DB::val('SELECT placement_parent_id FROM lo_tree WHERE user_id = ?', [$cur]) ?: 0);
+    }
+    return false;
+}
+
+// Moves a member (with the whole team below) into an EMPTY Left/Right slot. Admin-only, reason required,
+// audited with old and new position. Already settled volume and paid commission are never recalculated.
+$router->post('/api/admin/placement/move', function () {
+    $admin = Auth::admin();
+    $b = Http::body();
+    $reason = trim((string) ($b['reason'] ?? ''));
+    $side = strtoupper((string) ($b['side'] ?? ''));
+    if (!in_array($side, ['L', 'R'], true)) throw new HttpError('Side must be L or R', 422);
+    if (mb_strlen($reason) < 5 || mb_strlen($reason) > 255) throw new HttpError('Reason (5–255 characters) is required', 422);
+    $uid = adminMemberId((string) ($b['member'] ?? ''));
+    $pid = adminMemberId((string) ($b['parent'] ?? ''));
+    $out = DB::tx(function () use ($admin, $uid, $pid, $side, $reason) {
+        DB::one('SELECT id FROM lo_placement_lock WHERE id = 1 FOR UPDATE');
+        $node = DB::one('SELECT * FROM lo_tree WHERE user_id = ? FOR UPDATE', [$uid]);
+        $parent = DB::one('SELECT * FROM lo_tree WHERE user_id = ? FOR UPDATE', [$pid]);
+        if (!$node || !$parent) throw new HttpError('Tree node missing', 404);
+        if ($node['placement_parent_id'] === null) throw new HttpError('The top account cannot be moved', 422);
+        if (inPlacementSubtree($uid, $pid)) throw new HttpError('New position is inside this member\'s own team', 422);
+        $slot = $side === 'L' ? 'left_child_id' : 'right_child_id';
+        if ($parent[$slot] !== null) throw new HttpError('That position is not empty', 409);
+        $oldParent = (int) $node['placement_parent_id'];
+        $oldSlot = $node['placement_side'] === 'L' ? 'left_child_id' : 'right_child_id';
+        DB::run("UPDATE lo_tree SET $oldSlot = NULL WHERE user_id = ? AND $oldSlot = ?", [$oldParent, $uid]);
+        DB::run("UPDATE lo_tree SET $slot = ? WHERE user_id = ?", [$uid, $pid]);
+        DB::run('UPDATE lo_tree SET placement_parent_id = ?, placement_side = ? WHERE user_id = ?', [$pid, $side, $uid]);
+        DB::run('UPDATE users SET placement_id = ?, position = ? WHERE id = ?', [$pid, $side === 'L' ? 'left' : 'right', $uid]);
+        DB::run('INSERT INTO lo_placement_audit (admin_id, user_id, old_parent_id, old_side, new_parent_id, new_side, reason) VALUES (?,?,?,?,?,?,?)',
+            [(int) $admin['id'], $uid, $oldParent, $node['placement_side'], $pid, $side, $reason]);
+        return ['moved' => true];
+    });
+    adminAudit($admin, 'PLACEMENT_MOVE', $uid);
+    Http::ok($out);
+});
+
+// Sponsor correction (enrollment tree). Admin-only, reason required, audited; cannot create a sponsor loop.
+$router->post('/api/admin/sponsor/change', function () {
+    $admin = Auth::admin();
+    $b = Http::body();
+    $reason = trim((string) ($b['reason'] ?? ''));
+    if (mb_strlen($reason) < 5 || mb_strlen($reason) > 255) throw new HttpError('Reason (5–255 characters) is required', 422);
+    $uid = adminMemberId((string) ($b['member'] ?? ''));
+    $sid = adminMemberId((string) ($b['sponsor'] ?? ''));
+    if ($uid === $sid) throw new HttpError('A member cannot sponsor themselves', 422);
+    DB::tx(function () use ($admin, $uid, $sid, $reason) {
+        DB::one('SELECT id FROM lo_placement_lock WHERE id = 1 FOR UPDATE');
+        $node = DB::one('SELECT sponsor_id FROM lo_tree WHERE user_id = ? FOR UPDATE', [$uid]);
+        if (!$node) throw new HttpError('Tree node missing', 404);
+        $cur = $sid; $guard = 0;
+        while ($cur && $guard++ < 200000) {
+            if ($cur === $uid) throw new HttpError('New sponsor is inside this member\'s own sponsor team', 422);
+            $cur = (int) (DB::val('SELECT sponsor_id FROM lo_tree WHERE user_id = ?', [$cur]) ?: 0);
+        }
+        DB::run('UPDATE lo_tree SET sponsor_id = ? WHERE user_id = ?', [$sid, $uid]);
+        DB::run('UPDATE users SET referred_by = (SELECT life_id FROM (SELECT life_id FROM users WHERE id = ?) s) WHERE id = ?', [$sid, $uid]);
+        DB::run('INSERT INTO lo_placement_audit (admin_id, user_id, old_sponsor_id, new_sponsor_id, reason) VALUES (?,?,?,?,?)',
+            [(int) $admin['id'], $uid, $node['sponsor_id'], $sid, $reason]);
+    });
+    adminAudit($admin, 'SPONSOR_CHANGE', $uid);
+    Http::ok(['changed' => true]);
+});
+
+$router->get('/api/admin/placement/audit', function () {
+    Auth::admin();
+    Http::ok(DB::all('SELECT a.*, u.life_id, au.name AS admin_name,
+        (SELECT life_id FROM users WHERE id = a.old_parent_id) AS old_parent, (SELECT life_id FROM users WHERE id = a.new_parent_id) AS new_parent,
+        (SELECT life_id FROM users WHERE id = a.old_sponsor_id) AS old_sponsor, (SELECT life_id FROM users WHERE id = a.new_sponsor_id) AS new_sponsor
+        FROM lo_placement_audit a JOIN users u ON u.id = a.user_id LEFT JOIN admin_users au ON au.id = a.admin_id ORDER BY a.id DESC LIMIT 200'));
+});

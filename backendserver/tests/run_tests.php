@@ -33,7 +33,16 @@ function api(string $method, string $path, ?array $body = null, ?string $token =
     $raw = curl_exec($ch);
     $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
+    // These scenario checks expect each sale's full result, so every payment is followed by its midnight
+    // closing (generation + matching). Deferred-closing behaviour itself is covered by daily_closing_test.php.
+    if ($method === 'POST' && preg_match('#^/api/(admin/activations/\d+/confirm|member/activate-id)$#', $path)) closeOpenActivations();
     return ['status' => $status, 'json' => json_decode((string) $raw, true) ?? [], 'raw' => (string) $raw];
+}
+
+function closeOpenActivations(): void {
+    // The member flow may leave the instant step to the minute runner; run it before closing.
+    foreach (\LifeOS\DB::all("SELECT id FROM lo_activations WHERE payment_status = 'SUCCESS' AND processed = 0 ORDER BY id") as $a) \LifeOS\Engine\Commission::processActivation((int) $a['id']);
+    foreach (\LifeOS\DB::all('SELECT id FROM lo_activations WHERE processed = 1 AND closed = 0 ORDER BY id') as $a) \LifeOS\Engine\Commission::closeActivation((int) $a['id']);
 }
 
 function master(string $method, string $path, ?array $body = null, ?string $key = MASTER_KEY, ?int $tsOverride = null): array {
@@ -151,7 +160,8 @@ $rr = api('GET', '/api/member/rank', null, $B['token'])['json']['data'];
 check('B rank Member at one matching', ($rr['current']['name'] ?? '') === 'Member', json_encode($rr['current'] ?? null));
 check('B lifetime matchings = 1', ($rr['lifetime_matchings'] ?? 0) === 1, 'got ' . ($rr['lifetime_matchings'] ?? 0));
 $rr = api('GET', '/api/member/rank', null, $tokenA)['json']['data'];
-check('A has no rank row yet (never earned a matching)', ($rr['current'] ?? []) === null || $rr['current'] === null, json_encode($rr['current'] ?? null));
+// Rank follows the approved Total Matching: an active account with 0 matchings holds the base rank (old-site "Active Account").
+check('Active A without matching holds only the base Member rank', ($rr['current']['name'] ?? '') === 'Member' && ($rr['lifetime_matchings'] ?? -1) === 0, json_encode($rr));
 
 // ---- Volume provenance: consumed pairs trace back to their source sales ----
 $pair = DB::one('SELECT * FROM lo_volume_pairs WHERE beneficiary_id = ? AND tree_type = "BINARY"', [$B['id']]);

@@ -13,7 +13,7 @@ final class TestLab
 {
     public const TABLES = ['lo_volume_pairs', 'lo_volumes', 'lo_matching_decisions', 'lo_matching_events', 'lo_matching_bills',
         'lo_daily_caps', 'lo_statements', 'lo_ledger', 'lo_allocations', 'lo_pool_movements', 'lo_sales', 'lo_activations',
-        'lo_enroll_legs', 'lo_user_ranks', 'lo_withdrawals', 'lo_transfers', 'lo_recharges'];
+        'lo_enroll_legs', 'lo_user_ranks', 'lo_withdrawals', 'lo_transfers', 'lo_recharges', 'lo_daily_volume', 'lo_daily_closings', 'lo_system_errors'];
 
     /** Browser-generated id of the action being run, so the progress bar never shows another action's record. */
     public static string $runId = '';
@@ -272,10 +272,14 @@ final class TestLab
             if ($left > 0 && $thisCall > 0) return ['partial' => true, 'settled_date' => $day, 'waiting' => $left] + $acc;
             $next = (new \DateTimeImmutable($day))->modify('+1 day')->format('Y-m-d');
             self::setClock($next);
-            // Midnight close of the finished day happens on the new date.
-            $close = Settlement::run(true, 1000, true);
-            $acc['statements_closed'] += (int) ($close['statements_closed'] ?? 0);
-            $acc['failed'] += (int) ($close['failed'] ?? 0);
+            // Midnight close of the finished day happens on the new date: generation + matching for every
+            // activation of $day, then statements. Repeats until the whole day is closed.
+            do {
+                $close = Settlement::run(true, 100, true, 120.0);
+                $acc['statements_closed'] += (int) ($close['statements_closed'] ?? 0);
+                $acc['failed'] += (int) ($close['failed'] ?? 0);
+                $open = (int) DB::val('SELECT COUNT(*) FROM lo_activations WHERE processed = 1 AND closed = 0 AND business_date <= ?', [$day]);
+            } while ($open > 0 && (int) ($close['closed'] ?? 0) > 0);
             self::progress('run', $total, $total, ['p' => $acc['processed'], 's' => $acc['statements_closed'], 'f' => $acc['failed']]);
             $days = (int) (DB::val("SELECT v FROM lo_settings WHERE k='test_lab_days'") ?: 0) + 1;
             $record = ['settled_date' => $day, 'next_date' => $next] + $acc;

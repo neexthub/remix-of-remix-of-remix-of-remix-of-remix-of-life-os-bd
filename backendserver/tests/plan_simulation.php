@@ -83,6 +83,18 @@ $replay = cronMinute();
 $ledgerCount = (int) DB::val('SELECT COUNT(*) FROM lo_ledger');
 check('repeat cron run creates no duplicate payout', $replay['code'] === 0 && (int) DB::val('SELECT COUNT(*) FROM lo_ledger') === $ledgerCount);
 
+// ---------- Dhaka midnight closing (generation + matching) ----------
+check('before midnight: referral only, no generation or matching yet', (int) DB::val("SELECT COUNT(*) FROM lo_ledger WHERE ledger_type IN ('GENERATION','MATCHING')") === 0 && (int) DB::val('SELECT COUNT(*) FROM lo_matching_events') === 0);
+DB::run('UPDATE lo_activations SET business_date = business_date - INTERVAL 1 DAY WHERE processed = 1 AND closed = 0');
+DB::run('UPDATE lo_daily_volume SET vol_date = vol_date - INTERVAL 1 DAY');
+$closeRuns = 0;
+do { $cr = cronMinute(); $closeRuns++; } while ((int) DB::val('SELECT COUNT(*) FROM lo_activations WHERE processed = 1 AND closed = 0') > 0 && $cr['code'] === 0 && $closeRuns < 20);
+check("midnight closing closed every activation ($closeRuns runs)", (int) DB::val('SELECT COUNT(*) FROM lo_activations WHERE processed = 1 AND closed = 0') === 0, json_encode($cr['json']));
+check('closing day recorded DONE and Minor Link daily counters reset', DB::val('SELECT status FROM lo_daily_closings ORDER BY closing_date DESC LIMIT 1') === 'DONE' && (int) DB::val('SELECT COUNT(*) FROM lo_daily_volume') === 0);
+$ledgerCount = (int) DB::val('SELECT COUNT(*) FROM lo_ledger');
+cronMinute();
+check('repeat closing run creates no duplicate payout', (int) DB::val('SELECT COUNT(*) FROM lo_ledger') === $ledgerCount);
+
 // ---------- 2. Independent plan model ----------
 $tree = []; foreach (DB::all('SELECT user_id, sponsor_id, placement_parent_id, placement_side FROM lo_tree') as $t) $tree[(int) $t['user_id']] = $t;
 $sales = DB::all("SELECT s.id, s.user_id, s.activation_id FROM lo_sales s JOIN lo_activations a ON a.id=s.activation_id WHERE a.payment_status='SUCCESS' ORDER BY s.id");

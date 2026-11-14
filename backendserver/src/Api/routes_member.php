@@ -533,10 +533,98 @@ $router->get('/api/member/enrollment/pairs', function () {
     Http::ok(['day' => $day, 'pairs' => $rows]);
 });
 
+// Dashboard summary: member, genealogy, matching (binary/enrollment separate, daily cap, Major/Minor link)
+// and commission totals. Read-only; heals a missing rank row from the approved matching count.
+$router->get('/api/member/summary', function () {
+    $u = Auth::member();
+    $uid = (int) $u['id'];
+    $t = DB::one('SELECT * FROM lo_tree WHERE user_id = ?', [$uid]) ?: [];
+    if (!empty($t['is_active'])) Rank::check($uid);
+    $nameSql = '(SELECT p.name FROM user_profiles p WHERE p.user_id = x.id ORDER BY p.id DESC LIMIT 1)';
+    $sponsor = !empty($t['sponsor_id']) ? DB::one("SELECT x.life_id, $nameSql AS name FROM users x WHERE x.id = ?", [(int) $t['sponsor_id']]) : null;
+    $parent = !empty($t['placement_parent_id']) ? DB::one("SELECT x.life_id, $nameSql AS name FROM users x WHERE x.id = ?", [(int) $t['placement_parent_id']]) : null;
+    $act = DB::one("SELECT activation_code, payment_ref, payment_status, created_at, processed_at, business_date, closed
+                    FROM lo_activations WHERE user_id = ? AND payment_status = 'SUCCESS' ORDER BY id LIMIT 1", [$uid]);
+    $ev = [];
+    foreach (DB::all("SELECT selected_type t, COUNT(*) n, COALESCE(SUM(actual_payout),0) s FROM lo_matching_events
+                      WHERE beneficiary_id = ? AND payout_status = 'PAID' GROUP BY selected_type", [$uid]) as $r) $ev[$r['t']] = $r;
+    $today = (string) DB::val('SELECT CURRENT_DATE()');
+    $lastClosing = DB::one("SELECT closing_date, finished_at FROM lo_daily_closings WHERE status = 'DONE' ORDER BY closing_date DESC LIMIT 1");
+    $capSetting = DB::val("SELECT v FROM lo_settings WHERE k = 'daily_matching_cap'");
+    $cap = min(\LifeOS\Engine\Plan::DAILY_MATCHING_CAP, $capSetting === false || $capSetting === null ? \LifeOS\Engine\Plan::DAILY_MATCHING_CAP : (float) $capSetting);
+    $closingDay = $lastClosing['closing_date'] ?? null;
+    $dayApproved = $closingDay ? (int) DB::val("SELECT COUNT(*) FROM lo_matching_events WHERE beneficiary_id = ? AND payout_status = 'PAID' AND created_at >= ? AND created_at < ? + INTERVAL 1 DAY", [$uid, $closingDay, $closingDay]) : 0;
+    $capUsed = $closingDay ? (float) (DB::val('SELECT paid FROM lo_daily_caps WHERE user_id = ? AND cap_date = ?', [$uid, $closingDay]) ?: 0) : 0.0;
+    $vol = DB::one('SELECT left_new, right_new FROM lo_daily_volume WHERE user_id = ? AND vol_date = ?', [$uid, $today]) ?: ['left_new' => 0, 'right_new' => 0];
+    $lc = (float) ($t['left_carry'] ?? 0); $rc = (float) ($t['right_carry'] ?? 0);
+    $majorSide = $lc >= $rc ? 'L' : 'R';
+    $minorNew = (int) ($majorSide === 'L' ? $vol['right_new'] : $vol['left_new']);
+    $ledger = [];
+    foreach (DB::all("SELECT ledger_type t, COALESCE(SUM(amount),0) s FROM lo_ledger WHERE user_id = ? AND status = 'PAID' GROUP BY ledger_type", [$uid]) as $r) $ledger[$r['t']] = (float) $r['s'];
+    $levels = [];
+    foreach (DB::all("SELECT level, COUNT(*) n, COALESCE(SUM(amount),0) s FROM lo_ledger WHERE user_id = ? AND ledger_type = 'GENERATION' AND status = 'PAID' AND amount > 0 GROUP BY level", [$uid]) as $r) $levels[(int) $r['level']] = $r;
+    $generation = [];
+    foreach (\LifeOS\Engine\Plan::GENERATION as $level => $amount) {
+        $generation[] = ['label' => sprintf('GEN-%02d', $level), 'level' => $level, 'rate' => (float) $amount,
+            'count' => (int) ($levels[$level]['n'] ?? 0), 'amount' => (float) ($levels[$level]['s'] ?? 0)];
+    }
+    // Pending: tonight's generation for today's (not yet closed) activations in my 10-level sponsor downline.
+    // Walks all open activations up ten sponsor levels together (one query per level).
+    $pendingGen = 0.0;
+    $at = array_map(fn ($r) => (int) $r['user_id'], DB::all("SELECT user_id FROM lo_activations WHERE processed = 1 AND closed = 0 AND payment_status = 'SUCCESS' LIMIT 5000"));
+    for ($level = 1; $level <= 10 && $at; $level++) {
+        $sponsorOf = [];
+        foreach (array_chunk(array_values(array_unique($at)), 500) as $chunk) {
+            $marks = implode(',', array_fill(0, count($chunk), '?'));
+            foreach (DB::all("SELECT user_id, sponsor_id FROM lo_tree WHERE user_id IN ($marks)", $chunk) as $r) $sponsorOf[(int) $r['user_id']] = $r['sponsor_id'] !== null ? (int) $r['sponsor_id'] : null;
+        }
+        $next = [];
+        foreach ($at as $id) {
+            $sp = $sponsorOf[$id] ?? null;
+            if ($sp === null) continue;
+            if ($sp === $uid) $pendingGen += (float) \LifeOS\Engine\Plan::GENERATION[$level];
+            else $next[] = $sp;
+        }
+        $at = $next;
+    }
+    $legacyBin = (int) ($t['legacy_binary_matchings'] ?? 0);
+    $legacyEnr = (int) ($t['legacy_enrollment_matchings'] ?? 0);
+    $total = (int) ($t['lifetime_matchings'] ?? 0);
+    $rank = Rank::current($uid);
+    Http::ok([
+        'member' => ['life_id' => $u['life_id'], 'name' => DB::val("SELECT name FROM user_profiles WHERE user_id = ? ORDER BY id DESC LIMIT 1", [$uid]),
+            'sponsor' => $sponsor, 'placement' => $parent ? $parent + ['side' => $t['placement_side'] ?? null] : null,
+            'active' => !empty($t['is_active']), 'status' => $u['status'], 'joined_at' => $u['created_at'],
+            'activation' => $act],
+        'genealogy' => ['directs' => (int) DB::val('SELECT COUNT(*) FROM lo_tree WHERE sponsor_id = ?', [$uid]),
+            'directs_active' => (int) DB::val('SELECT COUNT(*) FROM lo_tree WHERE sponsor_id = ? AND is_active = 1', [$uid])],
+        'matching' => [
+            'binary' => ['old_site' => $legacyBin, 'new' => (int) ($ev['BINARY']['n'] ?? 0), 'amount' => (float) ($ev['BINARY']['s'] ?? 0)],
+            'enrollment' => ['old_site' => $legacyEnr, 'new' => (int) ($ev['ENROLLMENT']['n'] ?? 0), 'amount' => (float) ($ev['ENROLLMENT']['s'] ?? 0)],
+            'total' => $total, 'rank_matching' => $total,
+            'last_closing' => $closingDay, 'daily_approved' => $dayApproved, 'cap' => $cap, 'cap_used' => round($capUsed, 6),
+            'cap_remaining' => round(max(0.0, $cap - $capUsed), 6),
+            'left_carry' => $lc, 'right_carry' => $rc, 'major_side' => $majorSide, 'major_balance' => max($lc, $rc),
+            'minor_side' => $majorSide === 'L' ? 'R' : 'L', 'minor_daily_count' => $minorNew,
+            'today' => $today, 'today_left_new' => (int) $vol['left_new'], 'today_right_new' => (int) $vol['right_new'],
+        ],
+        'commission' => [
+            'referral' => $ledger['REFERRAL'] ?? 0.0, 'generation' => $ledger['GENERATION'] ?? 0.0, 'matching' => $ledger['MATCHING'] ?? 0.0,
+            'other' => ($ledger['RANK'] ?? 0.0) + ($ledger['ADJUSTMENT'] ?? 0.0), 'cashback' => $ledger['CASHBACK'] ?? 0.0,
+            'pending' => $pendingGen,
+            'paid' => ($ledger['REFERRAL'] ?? 0.0) + ($ledger['GENERATION'] ?? 0.0) + ($ledger['MATCHING'] ?? 0.0) + ($ledger['RANK'] ?? 0.0) + ($ledger['ADJUSTMENT'] ?? 0.0),
+            'generation_levels' => $generation,
+        ],
+        'rank' => $rank,
+    ]);
+});
+
 $router->get('/api/member/rank', function () {
     $u = Auth::member();
     $uid = (int) $u['id'];
     $matchings = (int) DB::val('SELECT lifetime_matchings FROM lo_tree WHERE user_id = ?', [$uid]);
+    // Rank always follows the approved Total Matching (binary + enrollment); a missing row is awarded here.
+    if ((int) DB::val('SELECT is_active FROM lo_tree WHERE user_id = ?', [$uid]) === 1) Rank::check($uid);
     $current = Rank::current($uid);
     // Imported members keep an earned rank before new matchings accrue; the next rank is always above it.
     $floor = max($matchings, (int) ($current['required_matchings'] ?? 0));
@@ -649,8 +737,14 @@ $router->post('/api/member/activate-id', function () {
         DB::run('UPDATE lo_tree SET is_active = 1 WHERE user_id = ?', [$toUid]);
         DB::insert("INSERT INTO lo_deposits (deposit_code, user_id, kind, amount, target_user_id, activation_id, note) VALUES (?,?,'ACTIVATE_ID',?,?,?,?)",
             ['DEP-' . $code, $uid, -ACTIVE_ID_FEE, $toUid, $actId, 'Active New ID ' . $to['life_id']]);
-        return ['activation_code' => $code, 'life_id' => $to['life_id'], 'amount' => ACTIVE_ID_FEE];
+        return ['activation_code' => $code, 'life_id' => $to['life_id'], 'amount' => ACTIVE_ID_FEE, 'activation_id' => $actId];
     });
+    // Direct referral is paid at once; generation and matching wait for the midnight closing.
+    // If this instant step fails, the minute runner retries it (activation stays SUCCESS + unprocessed).
+    if (\LifeOS\Engine\Commission::instantEnabled()) {
+        try { \LifeOS\Engine\Commission::processActivation((int) $out['activation_id']); } catch (\Throwable $ignored) {}
+    }
+    unset($out['activation_id']);
     Http::ok($out + ['status' => 'ACTIVE']);
 });
 
