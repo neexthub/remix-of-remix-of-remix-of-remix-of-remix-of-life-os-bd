@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { DataTable, DateFilter, fmtDate, inRange, Page, useMember } from "@/components/member-kit";
 import { bdt, LEDGER_LABELS } from "@/lib/member-api";
+import { GenerationCommission } from "@/components/member-summary";
 
 export const Route = createFileRoute("/member/commission")({
   head: () => ({ meta: [{ title: "Bonus Report — Life OS Member" }, { name: "description", content: "Life OS member bonus report." }, { property: "og:title", content: "Bonus Report — Life OS Member" }, { property: "og:description", content: "Life OS member bonus report." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -36,6 +37,7 @@ function Commission() {
         footSpan={5}
         foot={rows.length ? ["All Total", bdt(rows.reduce((a, r) => a + Number(r.amount), 0))] : undefined}
       />
+      <GenerationCommission />
     </Page>
   );
 }

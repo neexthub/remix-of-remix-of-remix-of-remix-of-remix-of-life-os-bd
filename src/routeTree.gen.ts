@@ -44,6 +44,7 @@ import { Route as AdminActivationsRouteImport } from './routes/admin.activations
 import { Route as AdminBalanceAddRouteImport } from './routes/admin.balance-add'
 import { Route as AdminCashbackApiRouteImport } from './routes/admin.cashback-api'
 import { Route as AdminCronRouteImport } from './routes/admin.cron'
+import { Route as AdminDailyClosingRouteImport } from './routes/admin.daily-closing'
 import { Route as AdminJoiningReportRouteImport } from './routes/admin.joining-report'
 import { Route as AdminLedgerRouteImport } from './routes/admin.ledger'
 import { Route as AdminMatchingEventsRouteImport } from './routes/admin.matching-events'
@@ -51,6 +52,7 @@ import { Route as AdminMemberListRouteImport } from './routes/admin.member-list'
 import { Route as AdminMemberReportRouteImport } from './routes/admin.member-report'
 import { Route as AdminNoticeRouteImport } from './routes/admin.notice'
 import { Route as AdminPasswordRouteImport } from './routes/admin.password'
+import { Route as AdminPlacementRouteImport } from './routes/admin.placement'
 import { Route as AdminPlanRouteImport } from './routes/admin.plan'
 import { Route as AdminRankAchieversRouteImport } from './routes/admin.rank-achievers'
 import { Route as AdminRankRewardRouteImport } from './routes/admin.rank-reward'
@@ -261,6 +263,11 @@ const AdminCronRoute = AdminCronRouteImport.update({
   path: '/cron',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminDailyClosingRoute = AdminDailyClosingRouteImport.update({
+  id: '/daily-closing',
+  path: '/daily-closing',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminJoiningReportRoute = AdminJoiningReportRouteImport.update({
   id: '/joining-report',
   path: '/joining-report',
@@ -294,6 +301,11 @@ const AdminNoticeRoute = AdminNoticeRouteImport.update({
 const AdminPasswordRoute = AdminPasswordRouteImport.update({
   id: '/password',
   path: '/password',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlacementRoute = AdminPlacementRouteImport.update({
+  id: '/placement',
+  path: '/placement',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPlanRoute = AdminPlanRouteImport.update({
@@ -502,6 +514,7 @@ export interface FileRoutesByFullPath {
   '/admin/balance-add': typeof AdminBalanceAddRoute
   '/admin/cashback-api': typeof AdminCashbackApiRoute
   '/admin/cron': typeof AdminCronRoute
+  '/admin/daily-closing': typeof AdminDailyClosingRoute
   '/admin/joining-report': typeof AdminJoiningReportRoute
   '/admin/ledger': typeof AdminLedgerRoute
   '/admin/matching-events': typeof AdminMatchingEventsRoute
@@ -509,6 +522,7 @@ export interface FileRoutesByFullPath {
   '/admin/member-report': typeof AdminMemberReportRoute
   '/admin/notice': typeof AdminNoticeRoute
   '/admin/password': typeof AdminPasswordRoute
+  '/admin/placement': typeof AdminPlacementRoute
   '/admin/plan': typeof AdminPlanRoute
   '/admin/rank-achievers': typeof AdminRankAchieversRoute
   '/admin/rank-reward': typeof AdminRankRewardRoute
@@ -578,6 +592,7 @@ export interface FileRoutesByTo {
   '/admin/balance-add': typeof AdminBalanceAddRoute
   '/admin/cashback-api': typeof AdminCashbackApiRoute
   '/admin/cron': typeof AdminCronRoute
+  '/admin/daily-closing': typeof AdminDailyClosingRoute
   '/admin/joining-report': typeof AdminJoiningReportRoute
   '/admin/ledger': typeof AdminLedgerRoute
   '/admin/matching-events': typeof AdminMatchingEventsRoute
@@ -585,6 +600,7 @@ export interface FileRoutesByTo {
   '/admin/member-report': typeof AdminMemberReportRoute
   '/admin/notice': typeof AdminNoticeRoute
   '/admin/password': typeof AdminPasswordRoute
+  '/admin/placement': typeof AdminPlacementRoute
   '/admin/plan': typeof AdminPlanRoute
   '/admin/rank-achievers': typeof AdminRankAchieversRoute
   '/admin/rank-reward': typeof AdminRankRewardRoute
@@ -657,6 +673,7 @@ export interface FileRoutesById {
   '/admin/balance-add': typeof AdminBalanceAddRoute
   '/admin/cashback-api': typeof AdminCashbackApiRoute
   '/admin/cron': typeof AdminCronRoute
+  '/admin/daily-closing': typeof AdminDailyClosingRoute
   '/admin/joining-report': typeof AdminJoiningReportRoute
   '/admin/ledger': typeof AdminLedgerRoute
   '/admin/matching-events': typeof AdminMatchingEventsRoute
@@ -664,6 +681,7 @@ export interface FileRoutesById {
   '/admin/member-report': typeof AdminMemberReportRoute
   '/admin/notice': typeof AdminNoticeRoute
   '/admin/password': typeof AdminPasswordRoute
+  '/admin/placement': typeof AdminPlacementRoute
   '/admin/plan': typeof AdminPlanRoute
   '/admin/rank-achievers': typeof AdminRankAchieversRoute
   '/admin/rank-reward': typeof AdminRankRewardRoute
@@ -737,6 +755,7 @@ export interface FileRouteTypes {
     | '/admin/balance-add'
     | '/admin/cashback-api'
     | '/admin/cron'
+    | '/admin/daily-closing'
     | '/admin/joining-report'
     | '/admin/ledger'
     | '/admin/matching-events'
@@ -744,6 +763,7 @@ export interface FileRouteTypes {
     | '/admin/member-report'
     | '/admin/notice'
     | '/admin/password'
+    | '/admin/placement'
     | '/admin/plan'
     | '/admin/rank-achievers'
     | '/admin/rank-reward'
@@ -813,6 +833,7 @@ export interface FileRouteTypes {
     | '/admin/balance-add'
     | '/admin/cashback-api'
     | '/admin/cron'
+    | '/admin/daily-closing'
     | '/admin/joining-report'
     | '/admin/ledger'
     | '/admin/matching-events'
@@ -820,6 +841,7 @@ export interface FileRouteTypes {
     | '/admin/member-report'
     | '/admin/notice'
     | '/admin/password'
+    | '/admin/placement'
     | '/admin/plan'
     | '/admin/rank-achievers'
     | '/admin/rank-reward'
@@ -891,6 +913,7 @@ export interface FileRouteTypes {
     | '/admin/balance-add'
     | '/admin/cashback-api'
     | '/admin/cron'
+    | '/admin/daily-closing'
     | '/admin/joining-report'
     | '/admin/ledger'
     | '/admin/matching-events'
@@ -898,6 +921,7 @@ export interface FileRouteTypes {
     | '/admin/member-report'
     | '/admin/notice'
     | '/admin/password'
+    | '/admin/placement'
     | '/admin/plan'
     | '/admin/rank-achievers'
     | '/admin/rank-reward'
@@ -1217,6 +1241,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCronRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/daily-closing': {
+      id: '/admin/daily-closing'
+      path: '/daily-closing'
+      fullPath: '/admin/daily-closing'
+      preLoaderRoute: typeof AdminDailyClosingRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/joining-report': {
       id: '/admin/joining-report'
       path: '/joining-report'
@@ -1264,6 +1295,13 @@ declare module '@tanstack/react-router' {
       path: '/password'
       fullPath: '/admin/password'
       preLoaderRoute: typeof AdminPasswordRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/placement': {
+      id: '/admin/placement'
+      path: '/placement'
+      fullPath: '/admin/placement'
+      preLoaderRoute: typeof AdminPlacementRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/plan': {
@@ -1512,6 +1550,7 @@ interface AdminRouteChildren {
   AdminBalanceAddRoute: typeof AdminBalanceAddRoute
   AdminCashbackApiRoute: typeof AdminCashbackApiRoute
   AdminCronRoute: typeof AdminCronRoute
+  AdminDailyClosingRoute: typeof AdminDailyClosingRoute
   AdminJoiningReportRoute: typeof AdminJoiningReportRoute
   AdminLedgerRoute: typeof AdminLedgerRoute
   AdminMatchingEventsRoute: typeof AdminMatchingEventsRoute
@@ -1519,6 +1558,7 @@ interface AdminRouteChildren {
   AdminMemberReportRoute: typeof AdminMemberReportRoute
   AdminNoticeRoute: typeof AdminNoticeRoute
   AdminPasswordRoute: typeof AdminPasswordRoute
+  AdminPlacementRoute: typeof AdminPlacementRoute
   AdminPlanRoute: typeof AdminPlanRoute
   AdminRankAchieversRoute: typeof AdminRankAchieversRoute
   AdminRankRewardRoute: typeof AdminRankRewardRoute
@@ -1538,6 +1578,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBalanceAddRoute: AdminBalanceAddRoute,
   AdminCashbackApiRoute: AdminCashbackApiRoute,
   AdminCronRoute: AdminCronRoute,
+  AdminDailyClosingRoute: AdminDailyClosingRoute,
   AdminJoiningReportRoute: AdminJoiningReportRoute,
   AdminLedgerRoute: AdminLedgerRoute,
   AdminMatchingEventsRoute: AdminMatchingEventsRoute,
@@ -1545,6 +1586,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMemberReportRoute: AdminMemberReportRoute,
   AdminNoticeRoute: AdminNoticeRoute,
   AdminPasswordRoute: AdminPasswordRoute,
+  AdminPlacementRoute: AdminPlacementRoute,
   AdminPlanRoute: AdminPlanRoute,
   AdminRankAchieversRoute: AdminRankAchieversRoute,
   AdminRankRewardRoute: AdminRankRewardRoute,
