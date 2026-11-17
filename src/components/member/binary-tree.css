@@ -1,0 +1,74 @@
+/* Member binary tree (bt2-*). The member canvas is zoomed to fit the screen; the tree undoes that
+   (--member-unzoom) so member cards keep a comfortable real size on every device. */
+.bt2-root { zoom: var(--member-unzoom, 1); --bt-line:#093F89; --bt-line-soft:#9fb4d6; --bt-active:#0a8a3a; --bt-active-soft:#e6f5ec; --bt-inactive:#8a94a3; --bt-inactive-soft:#f1f3f6; --bt-ink:#0d2140; --bt-muted:#5c6b82; --bt-surface:#f7f9fd; --bt-card:#fff; --bt-accent:#093F89;
+  text-align:left; color:var(--bt-ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size:13px; background:#fff; }
+.neel .bt2-root *, .neel .bt2-root *::before, .neel .bt2-root *::after { box-sizing:border-box; }
+.bt2-root:fullscreen { padding:10px; overflow:auto; }
+
+.neel .bt2-bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; margin:8px 0; }
+.neel .bt2-search { display:flex; gap:6px; flex:1 1 260px; min-width:0; margin:0; }
+.neel .bt2-search input { flex:1; min-width:0; width:auto; height:36px; padding:4px 10px; border:1px solid #c9d6ea; border-radius:8px; font-size:14px; font-family:inherit; }
+.neel .bt2-root .bt2-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:36px; min-width:36px; padding:0 12px; border:1px solid #c9d6ea; border-radius:8px; background:#fff; color:var(--bt-accent); font-weight:700; font-size:13px; font-family:inherit; cursor:pointer; white-space:nowrap; transition:background .15s, color .15s, border-color .15s; }
+.neel .bt2-btn:hover { border-color:var(--bt-accent); background:#eef3fb; }
+.neel .bt2-root .bt2-btn[aria-pressed=true], .neel .bt2-root .bt2-btn--primary, .neel .bt2-root button[type=submit].bt2-btn--primary { background:var(--bt-accent); border-color:var(--bt-accent); color:#fff; }
+.neel .bt2-btn--icon { padding:0; width:36px; }
+.neel .bt2-tools { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.neel .bt2-size { display:flex; align-items:center; gap:8px; padding:0 10px; height:36px; border:1px solid #c9d6ea; border-radius:8px; background:#fff; font-weight:700; color:var(--bt-accent); }
+.neel .bt2-size input[type=range] { width:120px; accent-color:var(--bt-accent); padding:0; border:0; height:auto; }
+.neel .bt2-size output { min-width:42px; text-align:right; font-variant-numeric:tabular-nums; }
+
+.neel .bt2-summary { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; margin:4px 0 8px; color:var(--bt-muted); font-size:13px; }
+.neel .bt2-summary b { color:var(--bt-ink); }
+.neel .bt2-legend { display:inline-flex; align-items:center; gap:5px; }
+.neel .bt2-dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+.neel .bt2-dot--on { background:var(--bt-active); } .neel .bt2-dot--off { background:var(--bt-inactive); }
+.neel .bt2-dot--slot { border:1.5px dashed var(--bt-line); background:transparent; }
+
+.neel .bt2-surface { position:relative; width:100%; height:clamp(440px, calc(100vh - 190px), 940px); overflow:hidden; touch-action:none; border:1px solid #d5e0f0; border-radius:12px; cursor:grab; outline:none;
+  background: radial-gradient(circle, #dfe7f3 1px, transparent 1.2px) 0 0 / 22px 22px, var(--bt-surface); }
+.neel .bt2-surface:active { cursor:grabbing; }
+.neel .bt2-surface:focus-visible { box-shadow:0 0 0 3px #9fb4d6; }
+.bt2-root:fullscreen .bt2-surface { height:calc(100vh - 130px); }
+.neel .bt2-canvas { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.neel .bt2-hint { position:absolute; left:50%; bottom:10px; transform:translateX(-50%); padding:5px 12px; border-radius:999px; background:rgba(13,33,64,.78); color:#fff; font-size:12px; pointer-events:none; white-space:nowrap; }
+
+/* Member card: centred on its tree point; scaled with the zoom. */
+.neel .bt2-node { position:absolute; top:0; left:0; width:136px; margin:-62px 0 0 -68px; transform-origin:68px 62px; will-change:transform; }
+.neel .bt2-card { position:relative; width:136px; padding:8px 6px 6px; border-radius:14px; background:var(--bt-card); border:1.5px solid var(--bt-inactive); box-shadow:0 4px 14px rgba(13,33,64,.10); text-align:center; }
+.neel .bt2-card--on { border-color:var(--bt-active); }
+.neel .bt2-card--me { box-shadow:0 0 0 3px #f2c94c, 0 6px 18px rgba(13,33,64,.18); }
+.neel .bt2-card--found { animation: bt2-pulse 1.1s ease-in-out 3; }
+@keyframes bt2-pulse { 50% { box-shadow:0 0 0 8px rgba(242,201,76,.65), 0 6px 18px rgba(13,33,64,.18); } }
+.neel .bt2-main { display:block; width:100%; padding:0; margin:0; border:0; background:none; cursor:pointer; color:inherit; font:inherit; }
+.neel .bt2-avatar { display:block; position:relative; width:52px; height:52px; margin:0 auto 4px; border-radius:50%; overflow:hidden; border:3px solid var(--bt-inactive); background:var(--bt-inactive-soft); }
+.neel .bt2-card--on .bt2-avatar { border-color:var(--bt-active); background:var(--bt-active-soft); }
+.neel .bt2-avatar img { display:block; width:100%; height:100%; max-width:none; object-fit:cover; }
+.neel .bt2-name { display:block; font-weight:800; font-size:13px; line-height:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.neel .bt2-id { display:block; font-size:11px; line-height:14px; color:var(--bt-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.neel .bt2-counts { display:flex; justify-content:space-between; gap:4px; margin-top:5px; padding-top:5px; border-top:1px dashed #d8e0ec; font-size:11px; font-weight:700; color:var(--bt-muted); }
+.neel .bt2-counts span b { color:var(--bt-active); }
+.neel .bt2-more { position:absolute; left:50%; bottom:-15px; transform:translateX(-50%); height:24px; padding:0 10px; border-radius:999px; border:1px solid var(--bt-accent); background:#fff; color:var(--bt-accent); font-size:11px; font-weight:800; cursor:pointer; white-space:nowrap; font-family:inherit; box-shadow:0 2px 6px rgba(13,33,64,.15); }
+.neel .bt2-more:hover { background:var(--bt-accent); color:#fff; }
+.neel .bt2-status { position:absolute; top:6px; right:6px; width:9px; height:9px; border-radius:50%; background:var(--bt-inactive); }
+.neel .bt2-card--on .bt2-status { background:var(--bt-active); }
+
+/* Empty position: faint silhouette ("watermark") with a + to register a member right there. */
+.neel .bt2-slot { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; width:136px; height:124px; border-radius:14px; border:2px dashed var(--bt-line-soft); background:rgba(255,255,255,.55); color:var(--bt-accent); text-decoration:none; cursor:pointer; transition:background .15s, border-color .15s, transform .15s; }
+.neel .bt2-slot:hover, .neel .bt2-slot:focus-visible { background:#eef3fb; border-color:var(--bt-accent); transform:translateY(-2px); text-decoration:none; }
+.neel .bt2-ghost { display:block; position:relative; width:52px; height:52px; border-radius:50%; background:#e3eaf5; opacity:.75; overflow:hidden; }
+.neel .bt2-ghost::before { content:""; position:absolute; left:50%; top:10px; width:18px; height:18px; margin-left:-9px; border-radius:50%; background:#c3d0e4; }
+.neel .bt2-ghost::after { content:""; position:absolute; left:50%; top:31px; width:34px; height:30px; margin-left:-17px; border-radius:50% 50% 0 0; background:#c3d0e4; }
+.neel .bt2-plus { display:block; position:absolute; margin-top:-26px; margin-left:34px; width:26px; height:26px; border-radius:50%; background:var(--bt-accent); color:#fff; font-size:20px; line-height:25px; font-weight:800; text-align:center; box-shadow:0 2px 6px rgba(9,63,137,.35); }
+.neel .bt2-slot-label { font-size:12px; font-weight:800; }
+.neel .bt2-slot-sub { font-size:10.5px; color:var(--bt-muted); }
+
+.neel .bt2-empty { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:700; color:var(--bt-muted); }
+
+@media (max-width:700px) {
+  .neel .bt2-tools { width:100%; justify-content:space-between; }
+  .neel .bt2-size { flex:1; }
+  .neel .bt2-size input[type=range] { flex:1; width:auto; }
+  .neel .bt2-btn--label span { display:none; }
+  .neel .bt2-surface { height:clamp(420px, calc(100vh - 230px), 760px); }
+}
+@media (prefers-reduced-motion: reduce) { .neel .bt2-card--found { animation:none; } }

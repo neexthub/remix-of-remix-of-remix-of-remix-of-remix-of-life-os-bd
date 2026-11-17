@@ -248,3 +248,5 @@
 .neel-login-page .lo-reg-team { text-align: center; }
 .neel-login-page .lo-reg-team label { margin: 0 12px; cursor: pointer; font-weight: bold; }
 .neel-login-page input.lo-reg-auto { background: #eee; cursor: not-allowed; }
+.neel .lo-place-note { margin: 6px 0 10px; padding: 8px 12px; border: 1px dashed #093F89; background: #eef4fd; color: #093F89; border-radius: 6px; font-size: 13px; }
+.neel .lo-place-done { margin: 6px 0 12px; padding: 12px; border: 1px solid #0a7a32; background: #e9f7ee; border-radius: 6px; font-size: 14px; }

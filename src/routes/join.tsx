@@ -1,14 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { memberApi, memberToken } from "@/lib/member-api";
 import { NeelFrame, NEEL_LINKS } from "@/components/neel-frame";
 import type { JoinTeam } from "@/lib/join-fields";
 
-type Search = { ref?: string | undefined; team?: JoinTeam | undefined };
+type Search = { ref?: string | undefined; team?: JoinTeam | undefined; place?: string | undefined };
 type Sponsor = { name: string; life_id: string; placement_life_id: string; placement_side: JoinTeam };
 
 export const Route = createFileRoute("/join")({
-  validateSearch: (s: Record<string, unknown>): Search => ({ ref: typeof s["ref"] === "string" ? s["ref"] : undefined, team: s["team"] === "L" || s["team"] === "R" ? s["team"] : undefined }),
+  validateSearch: (s: Record<string, unknown>): Search => ({ ref: typeof s["ref"] === "string" ? s["ref"] : undefined, team: s["team"] === "L" || s["team"] === "R" ? s["team"] : undefined, place: typeof s["place"] === "string" && s["place"] ? s["place"] : undefined }),
   head: () => ({
     meta: [
       { title: "Join Life OS — Member Registration" },
@@ -24,7 +24,10 @@ export const Route = createFileRoute("/join")({
 });
 
 function Join() {
-  const { ref, team: linkTeam } = Route.useSearch();
+  const { ref, team: linkTeam, place } = Route.useSearch();
+  // Opened from "+" on the sponsor's tree: the new member goes exactly into that empty position,
+  // and the sponsor stays signed in (no session switch after registering).
+  const [done, setDone] = useState<{ life_id: string } | null>(null);
   const navigate = useNavigate();
   const [team, setTeam] = useState<JoinTeam | undefined>(linkTeam);
   // Without a referral link the visitor types the sponsor code; placement then fills in live.
@@ -54,12 +57,12 @@ function Join() {
     setSponsor(null); setRefErr("");
     if (code.length < 3) return;
     const t = setTimeout(() => {
-      memberApi<Sponsor>(`/sponsor?code=${encodeURIComponent(code)}${team ? `&team=${team}` : ""}`)
+      memberApi<Sponsor>(`/sponsor?code=${encodeURIComponent(code)}${team ? `&team=${team}` : ""}${place ? `&place=${encodeURIComponent(place)}` : ""}`)
         .then(s => { if (active) setSponsor(s); })
         .catch(e => { if (active) setRefErr(e.message === "Failed to fetch" ? "Unable to verify this referral code. Please try again when the server is available." : ref ? e.message : "Sponsor/Referral ID not found."); });
     }, ref ? 0 : 400);
     return () => { active = false; clearTimeout(t); };
-  }, [code, team, ref]);
+  }, [code, team, ref, place]);
 
   async function pickPhoto(file?: File) {
     setPhoto(null); setPhotoErr("");
@@ -86,8 +89,9 @@ function Join() {
         name: fd.get("name"), phone: fd.get("phone"), email: fd.get("email"),
         photo_base64: photo,
         username: uname.username, username_token: uname.username_token, password: fd.get("password"), confirm_password: fd.get("confirm"),
-        referral_code: code, team, accepted_terms: fd.get("terms") ? 1 : 0,
+        referral_code: code, team, accepted_terms: fd.get("terms") ? 1 : 0, ...(place ? { place } : {}),
       } });
+      if (place) { setDone({ life_id: r.life_id }); window.scrollTo(0, 0); return; }
       memberToken.set(r.token);
       await navigate({ to: "/member" });
     } catch (x) { setErr(x instanceof Error ? (x.message === "Failed to fetch" ? "Unable to connect to the registration server. Please try again." : x.message) : "Registration failed."); }
@@ -98,7 +102,12 @@ function Join() {
   }
   return <NeelFrame><div className="main_bg about">
     <h2 id="heading">Register Form</h2>
-    <form onSubmit={submit}>
+    {place && <div className="lo-place-note" role="note">New member will join at <b>{place}</b> · {team === "R" ? "Right" : "Left"} side.</div>}
+    {done && <div className="success lo-place-done" role="status">
+      Registration complete. New Account ID: <b>{done.life_id}</b>. Share this ID and the password with the new member.
+      <div style={{ marginTop: 8 }}><Link to="/member/tree">← Back to Binary Tree</Link></div>
+    </div>}
+    <form onSubmit={submit} hidden={!!done}>
       <table width="100%" border={0} cellSpacing={0} cellPadding={0}><tbody><tr>
         <td width="50%" valign="top">
           <table width="100%" border={0} cellSpacing={5} cellPadding={0}><tbody>
