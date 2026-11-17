@@ -1,16 +1,16 @@
-import { useState, type InputHTMLAttributes, type ReactNode } from "react";
+import { useState, type InputHTMLAttributes, type ReactNode, type Ref } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { AlertTriangle, CheckCircle2, Copy, Download, Eye, EyeOff, Check, ArrowRight } from "lucide-react";
 import { credentialText, downloadCredentialCard, formatJoined, type CredentialCard } from "@/lib/credential-card";
 import { memberKitAsset } from "@/lib/member-kit-assets";
 
-type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className"> & { icon: ReactNode; action?: ReactNode };
+type InputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "className"> & { icon: ReactNode; action?: ReactNode; inputRef?: Ref<HTMLInputElement> };
 
 /** Text input with a leading icon and optional trailing action button. */
-export function LxInput({ icon, action, ...rest }: InputProps) {
+export function LxInput({ icon, action, inputRef, ...rest }: InputProps) {
   return <div className={`lx-control${action ? " lx-control--action" : ""}`}>
     <span className="lx-ico" aria-hidden="true">{icon}</span>
-    <input className="lx-input" {...rest} />
+    <input className="lx-input" ref={inputRef} {...rest} />
     {action}
   </div>;
 }
