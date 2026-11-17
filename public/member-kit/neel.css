@@ -240,3 +240,11 @@
 .bt-member-details dd { text-align: right; overflow-wrap: anywhere; font-weight: 600; }
 .neel .bt-member .bt-below { font-size: 11px; line-height: 16px; margin-top: 2px; padding: 0 6px; border: 1px solid var(--lo-tree-line); border-radius: 8px; background: var(--lo-tree-paper); color: var(--lo-tree-line); cursor: pointer; font-weight: 700; }
 .neel .bt-summary span:nth-child(1) { font-weight: normal; color: var(--lo-tree-link); }
+
+/* ---------- Login page: quick register ---------- */
+.neel-login-page .lo-reg-link { background: none; border: 0; padding: 0; color: var(--lo-blue); font-weight: bold; font-size: 12px; cursor: pointer; font-family: inherit; text-decoration: underline; }
+.neel-login-page .lo-reg-title { font-size: 14px; color: var(--lo-blue); }
+.neel-login-page .lo-reg-note { font-size: 11px; margin-top: 3px; color: #000033; }
+.neel-login-page .lo-reg-team { text-align: center; }
+.neel-login-page .lo-reg-team label { margin: 0 12px; cursor: pointer; font-weight: bold; }
+.neel-login-page input.lo-reg-auto { background: #eee; cursor: not-allowed; }
