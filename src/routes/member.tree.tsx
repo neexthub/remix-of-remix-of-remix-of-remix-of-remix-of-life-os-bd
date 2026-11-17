@@ -7,7 +7,7 @@ import { Msg, Page, useMember } from "@/components/member-kit";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { memberApi } from "@/lib/member-api";
-import { autoOpenCandidates, baseLevelsFor, layoutBinary, layoutExpandable, placeJoinPath, subtreeTotals, visibleMembers, type ExpandLayout, type TreeNode, type TreeRow } from "@/lib/binary-layout";
+import { autoOpenCandidates, baseLevelsFor, layoutBinary, layoutExpandable, subtreeTotals, visibleMembers, type ExpandLayout, type TreeNode, type TreeRow } from "@/lib/binary-layout";
 import { memberKitAsset } from "@/lib/member-kit-assets";
 import "@/components/member/binary-tree.css";
 
@@ -325,7 +325,7 @@ function Tree() {
           if (n.slot) {
             const side = n.slot.side === "L" ? "Left" : "Right";
             return <div key={n.row[0]} className="bt2-node" style={style}>
-              <Link className="bt2-slot" to="/join" search={{ ref: myLifeId, team: n.slot.side, place: n.slot.parentLifeId }} aria-label={`Add a new member on the ${side} of ${n.slot.parentLifeId}`} title={placeJoinPath(myLifeId, n.slot)}>
+              <Link className="bt2-slot" to="/join" search={{ ref: myLifeId, team: n.slot.side, place: n.slot.parentLifeId }} aria-label={`Add a new member on the ${side} of ${n.slot.parentLifeId}`}>
                 <span className="bt2-ghost" aria-hidden="true" /><span className="bt2-plus" aria-hidden="true">+</span>
                 <span className="bt2-slot-label">Add {side}</span>
                 <span className="bt2-slot-sub">under {n.slot.parentLifeId}</span>
