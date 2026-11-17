@@ -124,19 +124,47 @@ export function layoutExpandable(rows: TreeRow[], rootId: number, baseLevels: nu
  */
 export function autoOpenCandidates(layout: ExpandLayout, view: { x: number; y: number; k: number }, width: number, height: number, minK = 0.45, limit = 6): number[] {
   if (view.k < minK) return [];
-  const mx = width * 0.08, my = height * 0.08;
+  const my = height * 0.08;
   return layout.nodes
     .filter((n) => !n.slot && n.hiddenBelow > 0)
     .map((n) => ({ n, sx: view.x + n.x * view.k, sy: view.y + n.y * view.k }))
-    // Fully on screen, with room below it so the opened members appear in view.
-    .filter(({ sx, sy }) => sx >= mx && sx <= width - mx && sy >= 62 * view.k && sy + NODE_H * view.k * 0.9 <= height - my)
+    // Its members below would appear on (or just above) the screen: horizontally near the screen and
+    // with their row above the bottom edge. Members far above stay closed, matching staleOpen's margin
+    // so a branch never opens and closes in a loop.
+    .filter(({ sx, sy }) => sx >= -width * 0.3 && sx <= width * 1.3 && sy + NODE_H * view.k >= -height * 0.4 && sy + NODE_H * view.k * 0.9 <= height - my)
     .sort((a, b) => Math.abs(a.sx - width / 2) - Math.abs(b.sx - width / 2) || a.sy - b.sy)
     .slice(0, limit)
     .map(({ n }) => n.row[0]);
 }
 
-/** Levels drawn first, by screen width: fewer on phones so each member stays readable. */
-export const baseLevelsFor = (screenWidth: number) => (screenWidth < 600 ? 2 : 3);
+/**
+ * Levels drawn first: as many as the screen can show at the member's size, so the bottom row
+ * still fits across and every level fits down (at least 2, at most 6).
+ */
+export function baseLevelsFor(screenWidth: number, screenHeight = 10_000, k = 1): number {
+  const across = Math.floor(Math.log2(Math.max(1, screenWidth / (NODE_W * k)))) + 1;
+  const down = Math.floor((screenHeight - 40) / (NODE_H * k));
+  return Math.max(2, Math.min(6, across, down));
+}
+
+/**
+ * Opened members whose branch the member has moved away from: neither they nor anything drawn
+ * under them is on (or within half a screen of) the screen. Closing them keeps only the area
+ * being viewed built, so the old area is removed and the new one can grow.
+ */
+export function staleOpen(layout: ExpandLayout, open: ReadonlySet<number>, parentOf: ReadonlyMap<number, number>, view: { x: number; y: number; k: number }, width: number, height: number): number[] {
+  if (!open.size) return [];
+  const mx = width * 0.5, my = height * 0.5;
+  const needed = new Set<number>();
+  for (const n of layout.nodes) {
+    const sx = view.x + n.x * view.k, sy = view.y + n.y * view.k;
+    if (sx < -mx || sx > width + mx || sy < -my || sy > height + my) continue;
+    let id: number | undefined = n.slot ? n.slot.parentId : n.row[0];
+    while (id !== undefined && !needed.has(id)) { needed.add(id); id = parentOf.get(id); }
+  }
+  if (!needed.size) return [];
+  return [...open].filter((id) => !needed.has(id));
+}
 
 /** Register Form link that puts the new member exactly into an empty tree position. */
 export function placeJoinPath(sponsorLifeId: string, slot: EmptySlot) {

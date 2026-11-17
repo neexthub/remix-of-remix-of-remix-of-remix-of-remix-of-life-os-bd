@@ -1,3 +1,9 @@
+# Binary tree: viewed-area building (2026-11-17)
+- [x] First screen shows as many levels as fit; no See-more/expand buttons; branches build by themselves where the member scrolls/drags and the area left behind closes.
+- [x] Left / Right team buttons and Left/Right totals; size only from the bar (wheel/finger drag moves, pinch ignored).
+- [x] "+" on empty positions opens Register Form at that exact place (live tested, test members removed).
+- [x] Tested computer + phone (mouse wheel, finger drag, pinch), 11 tree rule tests; deployed live.
+
 # Member ID format, status and admin member list (2026-11-17)
 - [x] New registrations: Register Form shows LID-2026-<8 digits>; that exact ID is saved as Account ID/username/membership no. (live test: LID-2026-97851106 saved and shown on dashboard; test account removed).
 - [x] Converted 1,153 LO######## IDs (and 846 sponsor references) to LID-2026-######## live; old LO IDs still accepted at login/sponsor lookup. Old-site hex IDs kept as-is (user choice). Backup table bk_lo_id_convert_20261117.

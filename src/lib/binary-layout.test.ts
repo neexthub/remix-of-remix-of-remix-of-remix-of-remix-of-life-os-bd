@@ -23,7 +23,7 @@ describe("full binary tree", () => {
     expect(visibleMembers(l, { x: -(deep?.x ?? 0) + 150, y: -(deep?.y ?? 0) + 50, k: 1 }, 300, 100).some((n) => n.row[0] === 4)).toBe(true);
   });
 });
-import { autoOpenCandidates, baseLevelsFor, layoutExpandable, placeJoinPath, slotId } from "./binary-layout";
+import { autoOpenCandidates, baseLevelsFor, layoutExpandable, placeJoinPath, slotId, staleOpen } from "./binary-layout";
 describe("expandable tree with empty positions", () => {
   const team: TreeRow[] = [[1, "ROOT", "Root", 1, 2, null], [2, "LEFT", "Left", 1, null, 3], [3, "LR", "Deep", 1, null, null]];
   it("shows an empty Right position beside a member that only has a Left member", () => {
@@ -45,6 +45,10 @@ describe("expandable tree with empty positions", () => {
     expect(autoOpenCandidates(l, { ...centred, k: 0.2 }, 800, 600)).toEqual([]);
     expect(autoOpenCandidates(l, { x: -m.x - 500, y: 0, k: 1 }, 800, 600)).toEqual([]);
     expect(autoOpenCandidates(l, { ...centred, y: 560 - m.y }, 800, 600)).toEqual([]);
+    // Scrolled quickly past it: the member is just above the screen, its team would show on screen.
+    expect(autoOpenCandidates(l, { ...centred, y: -60 - m.y }, 800, 600)).toEqual([2]);
+    // Far above the screen: stays closed.
+    expect(autoOpenCandidates(l, { ...centred, y: -900 - m.y }, 800, 600)).toEqual([]);
   });
   it("a member with nobody below shows both empty positions even beyond the first levels", () => {
     const l = layoutExpandable(team, 1, 1, new Set([2]), true);
@@ -52,7 +56,21 @@ describe("expandable tree with empty positions", () => {
     expect(layoutExpandable(team, 1, 1, new Set([2]), false).byId.has(slotId(3, "L"))).toBe(false);
   });
   it("phones draw fewer first levels than computers", () => {
-    expect(baseLevelsFor(390)).toBe(2); expect(baseLevelsFor(1280)).toBe(3);
+    expect(baseLevelsFor(374, 560, 0.72)).toBe(2); expect(baseLevelsFor(968, 660, 1)).toBe(3);
+    // Smaller members: more levels fit on the same screen; never fewer than 2 or more than 6.
+    expect(baseLevelsFor(968, 900, 0.5)).toBe(4); expect(baseLevelsFor(200, 200, 2)).toBe(2); expect(baseLevelsFor(99999, 99999, 0.3)).toBe(6);
+  });
+  it("closes opened branches only after the member has moved away from them", () => {
+    const l = layoutExpandable(team, 1, 1, new Set([2]), false);
+    const parentOf = new Map([[2, 1], [3, 2], [9, 1]]);
+    const m = l.byId.get(3)!;
+    expect(staleOpen(l, new Set([2]), parentOf, { x: 400 - m.x, y: 300 - m.y, k: 1 }, 800, 600)).toEqual([]);
+    // Nothing near the screen at all (e.g. while gliding): close nothing.
+    expect(staleOpen(l, new Set([2]), parentOf, { x: 0, y: -50000, k: 1 }, 800, 600)).toEqual([]);
+    // Moved far to another branch (member 9): branch 2 is closed, the path to 9 stays.
+    const far = { ...l.byId.get(1)!, row: [9, "FAR", "Far", 1, null, null] as TreeRow, x: m.x + 5000 };
+    const l2 = { ...l, nodes: [...l.nodes, far] };
+    expect(staleOpen(l2, new Set([2, 9]), parentOf, { x: 400 - far.x, y: 300 - far.y, k: 1 }, 800, 600)).toEqual([2]);
   });
   it("the + link opens the Register Form at that exact position", () => {
     expect(placeJoinPath("LID-2026-937CCC", { parentId: 9, parentLifeId: "LID-2026-AAA", side: "R" })).toBe("/join?ref=LID-2026-937CCC&team=R&place=LID-2026-AAA");
