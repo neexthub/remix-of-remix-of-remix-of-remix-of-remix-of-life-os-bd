@@ -64,6 +64,8 @@ function Tree() {
   const anchor = useRef<{ id: number; at: Pt } | null>(null);
   const pendingCenter = useRef<number | null>(null);
   const [, setFrame] = useState(0);
+  // Bumped when a move animation ends, so auto-open/close checks run again once members have settled.
+  const [settled, setSettled] = useState(0);
   const prevLayout = useRef<ExpandLayout | null>(null);
   // Auto-open starts only after the member drags/pinches/scrolls, so the first screen stays calm.
   const userMoved = useRef(false);
@@ -86,7 +88,7 @@ function Tree() {
     }
     anim.current = { from, start: performance.now() };
     let raf = 0;
-    const step = () => { setFrame((f) => f + 1); if (anim.current && performance.now() - anim.current.start < ANIM_MS) raf = requestAnimationFrame(step); else { anim.current = null; setFrame((f) => f + 1); } };
+    const step = () => { setFrame((f) => f + 1); if (anim.current && performance.now() - anim.current.start < ANIM_MS) raf = requestAnimationFrame(step); else { anim.current = null; setFrame((f) => f + 1); setSettled((n) => n + 1); } };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [layout, mode]);
@@ -205,9 +207,8 @@ function Tree() {
       if (ids.length) openMembers(ids);
     }, 260);
     return () => window.clearTimeout(timer);
-  }, [view, layout, size, mode, openMembers]);
+  }, [view, layout, size, mode, openMembers, settled]);
 
-  useEffect(() => { (window as unknown as Record<string, unknown>).__bt = { layout, view, size, cands: autoOpenCandidates(layout, view, size.width, size.height, 0.4, 4), moved: userMoved.current, anim: !!anim.current }; });
   // When the member moves to a new area, the branches left behind are closed (kept members stay in place).
   useEffect(() => {
     if (mode !== "near" || !open.size) return;
@@ -223,7 +224,7 @@ function Tree() {
       setOpen((cur) => { const n = new Set(cur); drop.forEach((id) => n.delete(id)); return n; });
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [view, layout, size, mode, open, parentOf]);
+  }, [view, layout, size, mode, open, parentOf, settled]);
 
   // ---- connectors and far-zoom dots on a canvas ----
   useEffect(() => {
