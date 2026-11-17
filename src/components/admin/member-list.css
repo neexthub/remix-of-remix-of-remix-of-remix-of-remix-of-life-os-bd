@@ -32,7 +32,7 @@
 .ml-filters { border:1px solid var(--ml-line); border-radius:10px; background:var(--ml-bg); padding:12px; margin:8px 0; }
 .ml-filters__main { display:grid; grid-template-columns:minmax(0,2.4fr) repeat(3,minmax(0,1fr)) auto; gap:10px; align-items:end; }
 .ml-filters__more { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--ml-line); }
-.ml-field { display:flex; flex-direction:column; gap:3px; font-size:11px; font-weight:700; color:var(--ml-muted); text-transform:uppercase; letter-spacing:.03em; min-width:0; }
+.ml-field { width:auto; margin:0; display:flex; flex-direction:column; gap:3px; font-size:11px; font-weight:700; color:var(--ml-muted); text-transform:uppercase; letter-spacing:.03em; min-width:0; }
 .ml-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .ml-filters__foot { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-top:10px; }
 .ml-chips { display:flex; flex-wrap:wrap; gap:6px; }
@@ -93,7 +93,7 @@
 .ml-card__grid dt { font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ml-muted); font-weight:700; }
 .ml-card__grid dd { margin:0; font-weight:600; overflow-wrap:anywhere; }
 .ml-card__actions { display:grid; grid-template-columns:1fr auto auto; gap:6px; }
-.ml-selectall { display:flex; align-items:center; gap:8px; font-weight:700; margin:4px 0 8px; }
+.ml-selectall { width:auto; display:flex; align-items:center; gap:8px; font-weight:700; margin:4px 0 8px; }
 
 @media (max-width:1100px) {
   .ml-filters__main { grid-template-columns:repeat(2,minmax(0,1fr)); }
