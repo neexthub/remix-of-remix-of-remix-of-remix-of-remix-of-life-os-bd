@@ -4,6 +4,7 @@
 - [x] Status: activation now marks the member active; repaired 623 activated members shown pending (Active = Tree Active = 52,977 live).
 - [x] Admin Member List: server paging with correct SL (page 100 starts at 4951), filters, sort, CSV export, bulk status, summary counts. Live browser checked.
 - [x] Deployed live (deploy-20261117-155505 + website files).
+- [x] Member List redesign: summary cards, collapsible filters with removable tags, desktop table / phone+tablet cards, real-size on phones, solid password dialog. Live-tested at 1280/820/390px, 22 frontend tests pass.
 # Old-site full data + daily closing plan (2026-11-14)
 - [x] Instant direct referral; generation (GEN-01..GEN-10) + enrollment/binary matching only at the Dhaka-midnight daily closing; one final matching credit per sale; Total = Rank Matching counts approved matching; Major carry kept, Minor counter reset; system error log. Tests: 143 API + 26 closing + plan simulation.
 - [x] Member dashboard (member/genealogy/matching/commission), separate binary/enrollment matching, GEN levels; admin Daily Closing & Errors and audited Placement Correction pages.
