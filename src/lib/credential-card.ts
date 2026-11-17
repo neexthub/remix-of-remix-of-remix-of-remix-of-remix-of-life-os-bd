@@ -62,7 +62,9 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
 const FONT = '"Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif';
 
 export async function drawCredentialCard(c: CredentialCard, logoSrc: string): Promise<HTMLCanvasElement> {
-  const W = 1080, H = 1440;
+  const rowCount = 3 + (c.phone ? 1 : 0) + (c.sponsorId ? 1 : 0);
+  // Layout is top-down; the canvas height follows the number of rows so nothing overlaps.
+  const W = 1080, H = 70 + 230 + 200 + 190 + 36 + rowCount * 96 + 36 + 92 + 150 + 70;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
@@ -130,8 +132,8 @@ export async function drawCredentialCard(c: CredentialCard, logoSrc: string): Pr
 
   // footer
   ctx.fillStyle = C.muted; ctx.font = `500 26px ${FONT}`;
-  ctx.fillText(fit(ctx, `Login: ${c.loginUrl}`, cw - 100), W / 2, cy + ch - 56);
-  ctx.fillStyle = C.leaf; rr(ctx, W / 2 - 60, cy + ch - 30, 120, 8, 4); ctx.fill();
+  ctx.fillText(fit(ctx, `Login: ${c.loginUrl}`, cw - 100), W / 2, ry + 92 + 66);
+  ctx.fillStyle = C.leaf; rr(ctx, W / 2 - 60, ry + 92 + 100, 120, 8, 4); ctx.fill();
   return canvas;
 }
 
