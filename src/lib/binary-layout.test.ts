@@ -46,6 +46,11 @@ describe("expandable tree with empty positions", () => {
     expect(autoOpenCandidates(l, { x: -m.x - 500, y: 0, k: 1 }, 800, 600)).toEqual([]);
     expect(autoOpenCandidates(l, { ...centred, y: 560 - m.y }, 800, 600)).toEqual([]);
   });
+  it("a member with nobody below shows both empty positions even beyond the first levels", () => {
+    const l = layoutExpandable(team, 1, 1, new Set([2]), true);
+    expect(l.byId.get(slotId(3, "L"))?.slot?.side).toBe("L"); expect(l.byId.get(slotId(3, "R"))?.slot?.side).toBe("R");
+    expect(layoutExpandable(team, 1, 1, new Set([2]), false).byId.has(slotId(3, "L"))).toBe(false);
+  });
   it("phones draw fewer first levels than computers", () => {
     expect(baseLevelsFor(390)).toBe(2); expect(baseLevelsFor(1280)).toBe(3);
   });

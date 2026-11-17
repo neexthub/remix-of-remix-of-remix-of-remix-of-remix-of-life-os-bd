@@ -91,7 +91,9 @@ export function layoutExpandable(rows: TreeRow[], rootId: number, baseLevels: nu
   const h = hierarchy<Item>({ row: root, depth: 0 }, (item) => {
     if (item.slot) return [];
     const { row, depth } = item;
-    if (!(depth < baseLevels || open.has(row[0]))) return [];
+    // Members with nobody below always show their two empty positions (+), at any depth.
+    const leaf = row[4] === null && row[5] === null;
+    if (!(depth < baseLevels || open.has(row[0]) || (slots && leaf))) return [];
     const kids: Item[] = [];
     (["L", "R"] as const).forEach((side, i) => {
       const id = row[4 + i] as number | null;
