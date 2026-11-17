@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_FILTERS, memberListQuery, pageCount, serialNo, toCsv } from "./member-list";
+import { EMPTY_FILTERS, activeFilters, clampPage, memberListQuery, pageCount, serialNo, toCsv } from "./member-list";
 
 describe("member list", () => {
   it("serial number continues across pages", () => {
@@ -17,5 +17,16 @@ describe("member list", () => {
   });
   it("csv keeps commas and quotes", () => {
     expect(toCsv(["A", "B"], [["x,y", 'say "hi"']])).toBe('"A","B"\r\n"x,y","say ""hi"""');
+  });
+  it("shows a removable tag for each filled filter, not sort or page size", () => {
+    const tags = activeFilters({ ...EMPTY_FILTERS, status: "pending", rank: "3", side: "L", sort: "old", per: "100" }, [{ id: 3, name: "Gold" }]);
+    expect(tags.map((t) => t.label)).toEqual(["Status: Pending", "Side: Left", "Rank: Gold"]);
+    expect(activeFilters(EMPTY_FILTERS)).toEqual([]);
+  });
+  it("page jump stays within the page range", () => {
+    expect(clampPage("100", 1480, 1)).toBe(100);
+    expect(clampPage("99999", 1480, 1)).toBe(1480);
+    expect(clampPage("0", 1480, 5)).toBe(1);
+    expect(clampPage("", 1480, 5)).toBe(5);
   });
 });
