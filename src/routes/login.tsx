@@ -65,7 +65,7 @@ function Login() {
           <form className="lx-body" onSubmit={submit} autoComplete="off">
             {err && <div className="lx-alert" role="alert"><AlertCircle aria-hidden="true" />{err}</div>}
             <LxField label="Account ID" htmlFor="username">
-              <LxInput id="username" name="username" icon={<IdCard />} type="text" placeholder="Account ID or mobile number" required autoComplete="username" autoFocus />
+              <LxInput id="username" name="username" icon={<IdCard />} type="text" placeholder="Account ID or mobile number" required autoComplete="username" />
             </LxField>
             <LxField label="Password" htmlFor="password">
               <LxPassword id="password" name="password" icon={<KeyRound />} placeholder="Your password" required autoComplete="current-password" />

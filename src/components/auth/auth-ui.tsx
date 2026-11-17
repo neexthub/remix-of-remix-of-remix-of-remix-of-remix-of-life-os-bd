@@ -88,7 +88,7 @@ export function CredentialDialog({ open, card, container, continueLabel, onConti
           </div>
           <div className="lx-note"><AlertTriangle aria-hidden="true" />Keep this private. You need the Account ID and password to log in.</div>
           <div className="lx-dactions">
-            <button type="button" className="lx-btn lx-btn--ghost" onClick={() => void save()} disabled={saving}><Download aria-hidden="true" />{saving ? "Saving…" : "Download Image"}</button>
+            <button type="button" className="lx-btn lx-btn--ghost" onClick={() => void save()} disabled={saving}><Download aria-hidden="true" />{saving ? "Saving…" : "Save Image"}</button>
             <button type="button" className="lx-btn lx-btn--ghost" onClick={async () => flash(await copy(credentialText(card)) ? "Login info copied." : "Copy failed.")}><Check aria-hidden="true" />Copy All</button>
             <button type="button" className="lx-btn lx-btn--primary" onClick={onContinue}>{continueLabel}<ArrowRight aria-hidden="true" /></button>
           </div>
