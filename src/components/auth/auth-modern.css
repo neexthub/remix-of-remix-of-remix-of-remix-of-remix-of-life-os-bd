@@ -1,13 +1,13 @@
 /* Modern member Login / Register screens (lx-*). Scoped under .lx so the legacy reference pages are untouched.
    Brand tokens come from the Life OS logo: deep blue, ocean cyan and leaf green. */
-.lx { --lx-brand: oklch(0.37 0.13 258); --lx-brand-ink: oklch(0.27 0.09 258); --lx-cyan: oklch(0.71 0.13 220); --lx-leaf: oklch(0.78 0.17 128);
+.lx, .lx-dialog { --lx-brand: oklch(0.37 0.13 258); --lx-brand-ink: oklch(0.27 0.09 258); --lx-cyan: oklch(0.71 0.13 220); --lx-leaf: oklch(0.78 0.17 128);
   --lx-ink: oklch(0.24 0.03 258); --lx-muted: oklch(0.52 0.03 250); --lx-line: oklch(0.89 0.02 250); --lx-field: oklch(0.975 0.006 250);
   --lx-card: oklch(1 0 0 / 0.94); --lx-on-brand: oklch(1 0 0); --lx-ok: oklch(0.56 0.15 150); --lx-ok-soft: oklch(0.95 0.05 150);
   --lx-err: oklch(0.56 0.2 25); --lx-err-soft: oklch(0.96 0.03 25); --lx-warn-soft: oklch(0.97 0.05 90); --lx-warn: oklch(0.45 0.1 70);
   --lx-grad: linear-gradient(135deg, var(--lx-brand) 0%, oklch(0.5 0.14 240) 55%, var(--lx-cyan) 100%);
   --lx-shadow: 0 30px 60px -25px oklch(0.25 0.1 258 / 0.55), 0 0 0 1px oklch(1 0 0 / 0.6) inset;
-  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; color: var(--lx-ink); font-size: 15px; line-height: 1.45;
-  min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 28px 14px 40px; text-align: left; }
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; color: var(--lx-ink); font-size: 15px; line-height: 1.45; }
+.lx { min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 28px 14px 40px; text-align: left; }
 .neel-login-page .lx *, .neel-login-page .lx *::before, .neel-login-page .lx *::after, .lx-dialog *, .lx-dialog *::before, .lx-dialog *::after { box-sizing: border-box; }
 .lx-card { width: 100%; background: var(--lx-card); backdrop-filter: blur(14px); border-radius: 26px; box-shadow: var(--lx-shadow); overflow: hidden; animation: lx-rise .45s cubic-bezier(.2,.8,.2,1) both; }
 .lx-card--login { max-width: 400px; margin-top: 4vh; }
