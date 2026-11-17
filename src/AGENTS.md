@@ -2,3 +2,4 @@
 - Admin authentication always calls the PHP API; invalidate retired demo sessions so simulated access cannot survive upgrades.
 - Reference public/member-kit files via memberKitAsset/NEEL_CSS_HREF (build-time content-hash ?v=), because the live host caches them for 7 days and stale styles break new pages.
 - The admin shell exposes --admin-unzoom (inverse of its canvas zoom); responsive admin pages apply it on their own root so they render at real device size while other admin pages keep the scaled reference canvas.
+- The member binary tree undoes the member-shell zoom via --member-unzoom and lays out lazily (first levels + opened branches + empty "+" slots) so large teams stay readable at real device size.
