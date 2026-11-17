@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { memberApi, memberToken } from "@/lib/member-api";
 import { NeelFrame, NEEL_LINKS } from "@/components/neel-frame";
-import { BLOOD_GROUPS, DISTRICTS, type JoinTeam } from "@/lib/join-fields";
+import type { JoinTeam } from "@/lib/join-fields";
 
 type Search = { ref?: string | undefined; team?: JoinTeam | undefined };
 type Sponsor = { name: string; life_id: string; placement_life_id: string; placement_side: JoinTeam };
@@ -84,8 +84,7 @@ function Join() {
     try {
       const r = await memberApi<{ token: string; life_id: string }>("/register", { body: {
         name: fd.get("name"), phone: fd.get("phone"), email: fd.get("email"),
-        nid_number: fd.get("nid_number"), blood_group: fd.get("blood_group"), district: fd.get("district"),
-        post_code: fd.get("post_code"), address_current: fd.get("address_current"), photo_base64: photo,
+        photo_base64: photo,
         username: uname.username, username_token: uname.username_token, password: fd.get("password"), confirm_password: fd.get("confirm"),
         referral_code: code, team, accepted_terms: fd.get("terms") ? 1 : 0,
       } });
@@ -108,11 +107,6 @@ function Join() {
             {row("Full Name", "name", <input id="name" name="name" type="text" required maxLength={100} autoComplete="name" />, true, true)}
             {row("Cell Number", "phone", <input id="phone" name="phone" type="text" inputMode="tel" required pattern="01[3-9][0-9]{8}" title="01XXXXXXXXX" autoComplete="tel" />, true)}
             {row("Email Address", "email", <input id="email" name="email" type="email" required maxLength={120} autoComplete="email" />, true)}
-            {row("NID/PP No/DL. No.", "nid_number", <input id="nid_number" name="nid_number" type="text" maxLength={30} />)}
-            {row("Blood Group", "blood_group", <select id="blood_group" name="blood_group" required defaultValue=""><option value="">Select</option>{BLOOD_GROUPS.map(g => <option key={g}>{g}</option>)}</select>, true)}
-            {row("District Name", "district", <select id="district" name="district" required defaultValue=""><option value="">Select</option>{DISTRICTS.map(d => <option key={d}>{d}</option>)}</select>, true)}
-            {row("Post Code", "post_code", <input id="post_code" name="post_code" type="text" required maxLength={12} autoComplete="postal-code" />, true)}
-            {row("Address", "address_current", <textarea id="address_current" name="address_current" required maxLength={2000} autoComplete="street-address" />, true)}
             {row("Profile Passport Size Photo", "photo", <><input id="photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => void pickPhoto(e.currentTarget.files?.[0])} />{photo && <img className="lo-photo-preview" src={photo} alt="Selected profile photo" />}{photoErr && <div className="error" role="alert">{photoErr}</div>}</>)}
             {row("Sponsor/Referral ID", "sponsor", ref
               ? <input id="sponsor" type="text" value={sponsor?.life_id ?? ref} readOnly />
