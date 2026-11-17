@@ -45,6 +45,10 @@ describe("expandable tree with empty positions", () => {
     expect(autoOpenCandidates(l, { ...centred, k: 0.2 }, 800, 600)).toEqual([]);
     expect(autoOpenCandidates(l, { x: -m.x - 500, y: 0, k: 1 }, 800, 600)).toEqual([]);
     expect(autoOpenCandidates(l, { ...centred, y: 560 - m.y }, 800, 600)).toEqual([]);
+    // Scrolled quickly past it: the member is just above the screen, its team would show on screen.
+    expect(autoOpenCandidates(l, { ...centred, y: -60 - m.y }, 800, 600)).toEqual([2]);
+    // Far above the screen: stays closed.
+    expect(autoOpenCandidates(l, { ...centred, y: -900 - m.y }, 800, 600)).toEqual([]);
   });
   it("a member with nobody below shows both empty positions even beyond the first levels", () => {
     const l = layoutExpandable(team, 1, 1, new Set([2]), true);
