@@ -23,7 +23,7 @@ describe("full binary tree", () => {
     expect(visibleMembers(l, { x: -(deep?.x ?? 0) + 150, y: -(deep?.y ?? 0) + 50, k: 1 }, 300, 100).some((n) => n.row[0] === 4)).toBe(true);
   });
 });
-import { autoOpenCandidates, baseLevelsFor, layoutExpandable, placeJoinPath, slotId } from "./binary-layout";
+import { autoOpenCandidates, baseLevelsFor, layoutExpandable, placeJoinPath, slotId, staleOpen } from "./binary-layout";
 describe("expandable tree with empty positions", () => {
   const team: TreeRow[] = [[1, "ROOT", "Root", 1, 2, null], [2, "LEFT", "Left", 1, null, 3], [3, "LR", "Deep", 1, null, null]];
   it("shows an empty Right position beside a member that only has a Left member", () => {
@@ -52,7 +52,21 @@ describe("expandable tree with empty positions", () => {
     expect(layoutExpandable(team, 1, 1, new Set([2]), false).byId.has(slotId(3, "L"))).toBe(false);
   });
   it("phones draw fewer first levels than computers", () => {
-    expect(baseLevelsFor(390)).toBe(2); expect(baseLevelsFor(1280)).toBe(3);
+    expect(baseLevelsFor(374, 560, 0.72)).toBe(2); expect(baseLevelsFor(968, 660, 1)).toBe(3);
+    // Smaller members: more levels fit on the same screen; never fewer than 2 or more than 6.
+    expect(baseLevelsFor(968, 900, 0.5)).toBe(4); expect(baseLevelsFor(200, 200, 2)).toBe(2); expect(baseLevelsFor(99999, 99999, 0.3)).toBe(6);
+  });
+  it("closes opened branches only after the member has moved away from them", () => {
+    const l = layoutExpandable(team, 1, 1, new Set([2]), false);
+    const parentOf = new Map([[2, 1], [3, 1], [4, 2]]);
+    const m = l.byId.get(4)!;
+    const onIt = { x: 400 - m.x, y: 300 - m.y, k: 1 };
+    expect(staleOpen(l, new Set([2]), parentOf, onIt, 800, 600)).toEqual([]);
+    const far = { x: 400 - m.x, y: -5000, k: 1 };
+    expect(staleOpen(l, new Set([2]), parentOf, far, 800, 600)).toEqual([]);
+    const away = { x: -m.x - 2000 + 400, y: 300 - m.y, k: 1 };
+    const l2 = { ...l, nodes: [...l.nodes, { ...l.byId.get(3)!, x: m.x + 2400 }] };
+    expect(staleOpen(l2, new Set([2]), parentOf, away, 800, 600)).toEqual([2]);
   });
   it("the + link opens the Register Form at that exact position", () => {
     expect(placeJoinPath("LID-2026-937CCC", { parentId: 9, parentLifeId: "LID-2026-AAA", side: "R" })).toBe("/join?ref=LID-2026-937CCC&team=R&place=LID-2026-AAA");
