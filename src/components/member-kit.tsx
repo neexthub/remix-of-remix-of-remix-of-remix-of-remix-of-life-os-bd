@@ -123,7 +123,7 @@ export function MemberShell({ children }: { children: ReactNode }) {
 
   return (
     <div ref={ref} className="lifeos-member-viewport neel-viewport">
-      <div id="wrapper" className="lifeos-member neel" style={{ zoom: scale }}>
+      <div id="wrapper" className="lifeos-member neel" style={{ zoom: scale, ["--member-unzoom" as string]: String(1 / scale) }}>
         {adminTab && me.data && (
           <div style={{ background: "#C00", color: "#fff", textAlign: "center", padding: "6px 10px", fontWeight: 700, fontSize: 14 }}>
             Admin login — you are viewing member {me.data.life_id ?? ""} ({me.data.name}). Logout closes only this tab.
