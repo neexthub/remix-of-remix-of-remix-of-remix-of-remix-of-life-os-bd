@@ -1,3 +1,8 @@
+# Project note + GitHub data (2026-11-17)
+- [x] projectnot.txt: plan, workflow, servers/DBs, where credentials live, user decisions, work history, open tasks, data inventory.
+- [x] data-backups/: full schema, old live schema, latest legacy data (split <10MB, checksums). Oversized backups (1.27GB, 50MB snapshots, ZIPs) stay in Files.
+- [ ] Old-activation replay under new plan: waiting on rank reward amounts from user.
+
 # Binary tree: viewed-area building (2026-11-17)
 - [x] 2026-11-17: Register/Login redesigned (no * marks, placement hidden, 6-digit Account ID, save-info popup with image download, login Cancel → Register). Live: registered 806246 under LID-2026-937CCC, popup/image/dashboard and captcha login verified, test account removed; old QA helper files deleted from live.
 - [x] First screen shows as many levels as fit; no See-more/expand buttons; branches build by themselves where the member scrolls/drags and the area left behind closes.
