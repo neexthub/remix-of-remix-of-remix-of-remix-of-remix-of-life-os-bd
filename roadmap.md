@@ -1,10 +1,9 @@
 # Member ID format, status and admin member list (2026-11-17)
-- [ ] New registrations: Register Form shows LID-2026-<number>; that exact ID is saved as Account ID, shown everywhere and used for login.
-- [ ] Convert the 1,147 LO######## IDs to LID-2026-######## (same number) everywhere; old LO IDs still accepted at login/sponsor lookup.
-- [ ] Status: activation marks the member active; repair 623 activated members still shown pending.
-- [ ] Admin Member List: server paging with correct SL, advanced filters (status, tree active, rank, side, sponsor, date, search name/ID/phone/email), sort, CSV export, bulk status, summary counts.
-- [ ] Deploy live and test in real browser.
-
+- [x] New registrations: Register Form shows LID-2026-<8 digits>; that exact ID is saved as Account ID/username/membership no. (live test: LID-2026-97851106 saved and shown on dashboard; test account removed).
+- [x] Converted 1,153 LO######## IDs (and 846 sponsor references) to LID-2026-######## live; old LO IDs still accepted at login/sponsor lookup. Old-site hex IDs kept as-is (user choice). Backup table bk_lo_id_convert_20261117.
+- [x] Status: activation now marks the member active; repaired 623 activated members shown pending (Active = Tree Active = 52,977 live).
+- [x] Admin Member List: server paging with correct SL (page 100 starts at 4951), filters, sort, CSV export, bulk status, summary counts. Live browser checked.
+- [x] Deployed live (deploy-20261117-155505 + website files).
 # Old-site full data + daily closing plan (2026-11-14)
 - [x] Instant direct referral; generation (GEN-01..GEN-10) + enrollment/binary matching only at the Dhaka-midnight daily closing; one final matching credit per sale; Total = Rank Matching counts approved matching; Major carry kept, Minor counter reset; system error log. Tests: 143 API + 26 closing + plan simulation.
 - [x] Member dashboard (member/genealogy/matching/commission), separate binary/enrollment matching, GEN levels; admin Daily Closing & Errors and audited Placement Correction pages.
