@@ -47,7 +47,7 @@
 .neel .bt2-id { display:block; font-size:11px; line-height:14px; color:var(--bt-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .neel .bt2-counts { display:flex; justify-content:space-between; gap:4px; margin-top:5px; padding-top:5px; border-top:1px dashed #d8e0ec; font-size:11px; font-weight:700; color:var(--bt-muted); }
 .neel .bt2-counts span b { color:var(--bt-active); }
-.neel .bt2-more { position:absolute; left:50%; bottom:-15px; transform:translateX(-50%); height:24px; padding:0 10px; border-radius:999px; border:1px solid var(--bt-accent); background:#fff; color:var(--bt-accent); font-size:11px; font-weight:800; cursor:pointer; white-space:nowrap; font-family:inherit; box-shadow:0 2px 6px rgba(13,33,64,.15); }
+/* removed: see-more button */ .neel .bt2-more-unused { position:absolute; left:50%; bottom:-15px; transform:translateX(-50%); height:24px; padding:0 10px; border-radius:999px; border:1px solid var(--bt-accent); background:#fff; color:var(--bt-accent); font-size:11px; font-weight:800; cursor:pointer; white-space:nowrap; font-family:inherit; box-shadow:0 2px 6px rgba(13,33,64,.15); }
 .neel .bt2-more:hover { background:var(--bt-accent); color:#fff; }
 .neel .bt2-status { position:absolute; top:6px; right:6px; width:9px; height:9px; border-radius:50%; background:var(--bt-inactive); }
 .neel .bt2-card--on .bt2-status { background:var(--bt-active); }
@@ -72,3 +72,6 @@
   .neel .bt2-surface { height:clamp(420px, calc(100vh - 230px), 760px); }
 }
 @media (prefers-reduced-motion: reduce) { .neel .bt2-card--found { animation:none; } }
+
+.neel .bt2-sides { color:var(--bt-text, #1d2a3d); }
+@media (max-width: 600px) { .neel .bt2-btn--side span { display:inline !important; } .neel .bt2-sides { flex-basis:100%; } }

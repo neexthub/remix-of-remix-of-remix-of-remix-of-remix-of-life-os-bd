@@ -2,12 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { select } from "d3-selection";
 import { zoom as createZoom, zoomIdentity, type ZoomBehavior } from "d3-zoom";
-import { Expand, Map as MapIcon, Maximize, Minus, Plus, RotateCcw, Shrink } from "lucide-react";
+import { ChevronLeft, ChevronRight, Expand, Map as MapIcon, Maximize, Minus, Plus, RotateCcw, Shrink } from "lucide-react";
 import { Msg, Page, useMember } from "@/components/member-kit";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { memberApi } from "@/lib/member-api";
-import { autoOpenCandidates, baseLevelsFor, layoutBinary, layoutExpandable, subtreeTotals, visibleMembers, type ExpandLayout, type TreeNode, type TreeRow } from "@/lib/binary-layout";
+import { autoOpenCandidates, baseLevelsFor, layoutBinary, layoutExpandable, staleOpen, subtreeTotals, visibleMembers, type ExpandLayout, type TreeNode, type TreeRow } from "@/lib/binary-layout";
 import { memberKitAsset } from "@/lib/member-kit-assets";
 import "@/components/member/binary-tree.css";
 
@@ -38,11 +38,10 @@ function Tree() {
   const controller = useRef<ZoomBehavior<HTMLDivElement, unknown> | null>(null);
   const [view, setView] = useState<View>({ x: 0, y: 0, k: 1 });
   const viewRef = useRef(view); viewRef.current = view;
-  const [size, setSize] = useState({ width: 900, height: 600 });
+  const [size, setSize] = useState({ width: 0, height: 0 });
   const [mode, setMode] = useState<"near" | "full">("near");
   const [focusId, setFocusId] = useState<number | null>(null);
   const [open, setOpen] = useState<ReadonlySet<number>>(new Set());
-  const [auto, setAuto] = useState(true);
   const [search, setSearch] = useState(""), [message, setMessage] = useState<string | null>(null);
   const [selected, setSelected] = useState<TreeNode | null>(null), [details, setDetails] = useState<Details | null>(null), [busy, setBusy] = useState(false);
   const [found, setFound] = useState<number | null>(null);
@@ -50,7 +49,10 @@ function Tree() {
   const [isFull, setIsFull] = useState(false);
   const [pref, setPref] = useState<number | null>(null);
   const centerId = focusId ?? myId;
-  const base = baseLevelsFor(size.width);
+  // First levels: as many as this screen shows at the member's size; fixed per focus so moving never rebuilds them.
+  const sized = size.width > 0 && pref !== null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const base = useMemo(() => baseLevelsFor(size.width || 900, size.height || 600, pref ?? 1), [centerId, sized, mode]);
 
   const fullLayout = useMemo(() => mode === "full" ? layoutBinary(rows, myId, Infinity, totals) : null, [mode, rows, myId, totals]);
   const near = useMemo<ExpandLayout>(() => layoutExpandable(rows, centerId, base, open, true, totals), [rows, centerId, base, open, totals]);
@@ -109,14 +111,27 @@ function Tree() {
     if (!el) return;
     const behavior = createZoom<HTMLDivElement, unknown>().scaleExtent([0.0005, MAX_K])
       .extent(() => [[0, 0], [el.clientWidth, el.clientHeight]])
-      .filter((event) => !event.target.closest?.("button,a,input") && !event.button)
+      // Size changes only from the control bar: no wheel or pinch zoom, one finger / mouse drag moves.
+      .filter((event) => event.type !== "wheel" && !(event.touches && event.touches.length > 1) && !event.target.closest?.("button,a,input") && !event.button)
       .on("zoom", (event) => { if (event.sourceEvent) userMoved.current = true; setView({ x: event.transform.x, y: event.transform.y, k: event.transform.k }); });
     controller.current = behavior;
     const selection = select(el);
     selection.call(behavior).on("dblclick.zoom", null);
+    // Mouse wheel / trackpad scroll moves the tree (Shift = sideways); pinch gestures are ignored.
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (e.ctrlKey) return;
+      const f = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1;
+      let dx = e.deltaX * f, dy = e.deltaY * f;
+      if (e.shiftKey && !dx) { dx = dy; dy = 0; }
+      userMoved.current = true;
+      const k = viewRef.current.k || 1;
+      selection.call(behavior.translateBy, -dx / k, -dy / k);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
     const observer = new ResizeObserver(() => setSize({ width: el.clientWidth, height: el.clientHeight }));
     observer.observe(el);
-    return () => { observer.disconnect(); selection.on(".zoom", null); controller.current = null; };
+    return () => { observer.disconnect(); el.removeEventListener("wheel", onWheel); selection.on(".zoom", null); controller.current = null; };
   }, []);
   useEffect(() => {
     const saved = Number(window.localStorage.getItem(SIZE_KEY));
@@ -154,14 +169,14 @@ function Tree() {
   // New focus member (or first load): show it at the top in the comfortable size.
   const lastFocus = useRef<string>("");
   useEffect(() => {
-    if (!layout.nodes.length || pref === null) return;
+    if (!layout.nodes.length || !sized) return;
     const key = `${mode}:${centerId}`;
     if (lastFocus.current === key) return;
     lastFocus.current = key;
     if (mode === "full") { fitAll(); return; }
     const top = layout.byId.get(centerId);
     if (top) centerOn(top, pref, true);
-  }, [layout, mode, centerId, pref, centerOn, fitAll]);
+  }, [layout, mode, centerId, pref, sized, centerOn, fitAll]);
 
   // After a search opened the path, glide to the found member.
   useEffect(() => {
@@ -183,14 +198,31 @@ function Tree() {
 
   // Panning toward any side opens that side's collapsed members so the tree keeps growing into view.
   useEffect(() => {
-    if (!auto || mode !== "near" || layout.nodes.length > MAX_DRAWN) return;
+    if (mode !== "near" || layout.nodes.length > MAX_DRAWN) return;
     const timer = window.setTimeout(() => {
       if (anim.current || !userMoved.current) return;
-      const ids = autoOpenCandidates(layout, viewRef.current, size.width, size.height, 0.45, 2);
+      const ids = autoOpenCandidates(layout, viewRef.current, size.width, size.height, 0.4, 4);
       if (ids.length) openMembers(ids);
-    }, 380);
+    }, 260);
     return () => window.clearTimeout(timer);
-  }, [view, layout, size, auto, mode, openMembers]);
+  }, [view, layout, size, mode, openMembers]);
+
+  // When the member moves to a new area, the branches left behind are closed (kept members stay in place).
+  useEffect(() => {
+    if (mode !== "near" || !open.size) return;
+    const timer = window.setTimeout(() => {
+      const v = viewRef.current;
+      if (anim.current || !userMoved.current || v.k < 0.4) return;
+      const drop = staleOpen(layout, open, parentOf, v, size.width, size.height);
+      if (!drop.length) return;
+      const cx = (size.width / 2 - v.x) / v.k, cy = (size.height / 2 - v.y) / v.k;
+      let best: TreeNode | null = null, bd = Infinity;
+      for (const n of layout.nodes) { const d = (n.x - cx) ** 2 + (n.y - cy) ** 2; if (!n.slot && d < bd) { bd = d; best = n; } }
+      if (best) { const p = shownPos.current.get(best.row[0]) ?? best; anchor.current = { id: best.row[0], at: { x: p.x, y: p.y } }; }
+      setOpen((cur) => { const n = new Set(cur); drop.forEach((id) => n.delete(id)); return n; });
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [view, layout, size, mode, open, parentOf]);
 
   // ---- connectors and far-zoom dots on a canvas ----
   useEffect(() => {
@@ -226,6 +258,8 @@ function Tree() {
           const mid = (pn.y + cardH + c.y - cardH) / 2;
           ctx.moveTo(pn.x, pn.y + cardH); ctx.lineTo(pn.x, mid); ctx.lineTo(c.x, mid); ctx.lineTo(c.x, c.y - cardH);
         }
+        // Team continues below (opens by itself when the member moves there).
+        if (dashed && n.hiddenBelow > 0 && inView(pn.x, pn.x, pn.y, pn.y)) { ctx.moveTo(pn.x, pn.y + cardH); ctx.lineTo(pn.x, pn.y + cardH + 34); }
       }
       ctx.stroke();
     };
@@ -250,6 +284,19 @@ function Tree() {
     select(el).call(behavior.scaleTo, nk, [el.clientWidth / 2, el.clientHeight / 2]);
     if (save) { setPref(nk); window.localStorage.setItem(SIZE_KEY, String(nk)); }
   };
+  const centerRow = layout.byId.get(centerId)?.row;
+  const goSide = (side: "L" | "R") => {
+    const id = centerRow?.[side === "L" ? 4 : 5];
+    const word = side === "L" ? "Left" : "Right";
+    if (id === null || id === undefined) { setMessage(`No member on the ${word} side yet — tap + to add one.`); return; }
+    if (mode !== "near") { setMode("near"); return; }
+    const n = layout.byId.get(id);
+    if (!n) return;
+    setMessage(null); userMoved.current = true;
+    centerOn(n, viewRef.current.k, true);
+  };
+  const leftTotals = centerRow?.[4] != null ? totals.get(centerRow[4]) : undefined;
+  const rightTotals = centerRow?.[5] != null ? totals.get(centerRow[5]) : undefined;
   const focusMember = (id: number) => { setMode("near"); setOpen(new Set()); setFocusId(id === myId ? null : id); };
   const pick = async (n: TreeNode) => {
     setSelected(n); setDetails(null); setBusy(true);
@@ -304,6 +351,8 @@ function Tree() {
           </label>
           <button type="button" className="bt2-btn bt2-btn--icon" aria-label="Bigger members" title="Bigger" onClick={() => zoomTo(view.k * 1.25)}><Plus size={18} /></button>
           <button type="button" className="bt2-btn bt2-btn--icon" aria-label="Fit tree on screen" title="Fit on screen" onClick={fitAll}><Maximize size={18} /></button>
+          <button type="button" className="bt2-btn bt2-btn--label bt2-btn--side" title="Go to the Left team" onClick={() => goSide("L")}><ChevronLeft size={18} /><span>Left</span></button>
+          <button type="button" className="bt2-btn bt2-btn--label bt2-btn--side" title="Go to the Right team" onClick={() => goSide("R")}><span>Right</span><ChevronRight size={18} /></button>
           <button type="button" className="bt2-btn bt2-btn--label" aria-pressed={mode === "full"} title="Whole network map" onClick={() => setMode(mode === "full" ? "near" : "full")}><MapIcon size={17} /><span>Full map</span></button>
           <button type="button" className="bt2-btn bt2-btn--label" title="Back to my tree" onClick={() => { focusMember(myId); lastFocus.current = ""; }}><RotateCcw size={17} /><span>My tree</span></button>
           <button type="button" className="bt2-btn bt2-btn--icon" aria-label={isFull ? "Exit full screen" : "Full screen"} title={isFull ? "Exit full screen" : "Full screen"} onClick={() => void toggleFull()}>{isFull ? <Shrink size={18} /> : <Expand size={18} />}</button>
@@ -312,14 +361,14 @@ function Tree() {
       {q.data ? <div className="bt2-summary" aria-live="polite">
         <span><b>{integer(focusTotals?.all ?? 0)}</b> members</span>
         <span><b>{integer(focusTotals?.active ?? 0)}</b> active</span>
+        <span className="bt2-sides">Left <b>{integer(leftTotals?.all ?? 0)}</b> ({integer(leftTotals?.active ?? 0)} active) · Right <b>{integer(rightTotals?.all ?? 0)}</b> ({integer(rightTotals?.active ?? 0)} active)</span>
         {q.isFetching && <span role="status">Updating…</span>}
         <span className="bt2-legend"><i className="bt2-dot bt2-dot--on" /> Active</span>
         <span className="bt2-legend"><i className="bt2-dot bt2-dot--off" /> Inactive</span>
         {mode === "near" && <span className="bt2-legend"><i className="bt2-dot bt2-dot--slot" /> Empty position — tap + to add</span>}
-        {mode === "near" && <label className="bt2-legend"><input type="checkbox" checked={auto} onChange={(e) => setAuto(e.target.checked)} /> Auto-open while moving</label>}
       </div> : <div className="bt2-summary" role="status">Loading your tree…</div>}
 
-      <div ref={box} className="bt2-surface" role="region" aria-label="Binary tree. Drag to move, pinch or use the size slider to resize." tabIndex={0} onKeyDown={(e) => {
+      <div ref={box} className="bt2-surface" role="region" aria-label="Binary tree. Drag or scroll to move; the tree builds itself where you go. Use the size bar to resize." tabIndex={0} onKeyDown={(e) => {
         if (!box.current || !controller.current) return;
         const move: Record<string, [number, number]> = { ArrowLeft: [120 / view.k, 0], ArrowRight: [-120 / view.k, 0], ArrowUp: [0, 120 / view.k], ArrowDown: [0, -120 / view.k] };
         const delta = move[e.key];
@@ -351,11 +400,10 @@ function Tree() {
                 <span className="bt2-id">{n.row[1]}</span>
               </button>
               <div className="bt2-counts" aria-label="Active members on each side"><span>L <b>{integer(n.leftActive)}</b></span><span>R <b>{integer(n.rightActive)}</b></span></div>
-              {mode === "near" && n.hiddenBelow > 0 && <button type="button" className="bt2-more" onClick={() => openMembers([n.row[0]])} aria-label={`Open ${integer(n.hiddenBelow)} members below ${n.row[1]}`}>▼ {integer(n.hiddenBelow)}</button>}
             </div>
           </div>;
         })}
-        {!showCards && layout.nodes.length > 0 && <div className="bt2-hint">Zoom in to see names</div>}
+        {!showCards && layout.nodes.length > 0 && <div className="bt2-hint">Make members bigger with the size bar to see names</div>}
         {!layout.nodes.length && <p className="bt2-empty">{q.isLoading ? "Loading…" : "No tree data"}</p>}
       </div>
     </div>
