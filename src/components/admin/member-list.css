@@ -1,0 +1,130 @@
+/* Admin Member List: scoped styles (ml-*). Desktop table above 900px, member cards below. */
+/* Nested under the shell so these beat the reference admin stylesheets. */
+.lifeos-member .ml-root {
+& { --ml-brand:#009541; --ml-brand-dark:#007a35; --ml-brand-soft:#e8f6ee; --ml-warn:#b36b00; --ml-warn-soft:#fff4e0; --ml-bad:#c62828; --ml-bad-soft:#fdecec; --ml-ink:#1d2a22; --ml-muted:#5f6f66; --ml-line:#d9e3dc; --ml-card:#fff; --ml-bg:#f5f8f6;
+  text-align:left; color:var(--ml-ink); font-size:13px; }
+& *, & *::before, & *::after { box-sizing:border-box; }
+& input, & select { font:inherit; color:inherit; height:34px; padding:4px 8px; border:1px solid var(--ml-line); border-radius:6px; background:#fff; width:100%; min-width:0; }
+& input[type=checkbox] { width:18px; height:18px; padding:0; accent-color:var(--ml-brand); cursor:pointer; }
+& input:focus-visible, & select:focus-visible, .ml-btn:focus-visible { outline:2px solid var(--ml-brand); outline-offset:1px; }
+
+.ml-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:34px; padding:0 12px; border-radius:6px; border:1px solid var(--ml-line); background:#fff; color:var(--ml-ink); font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; transition:background .15s,border-color .15s; }
+.ml-btn:hover:not(:disabled) { border-color:var(--ml-brand); background:var(--ml-brand-soft); }
+.ml-btn:disabled { opacity:.45; cursor:not-allowed; }
+.ml-btn--primary { background:var(--ml-brand); border-color:var(--ml-brand); color:#fff; }
+.ml-btn--primary:hover:not(:disabled) { background:var(--ml-brand-dark); border-color:var(--ml-brand-dark); color:#fff; }
+.ml-btn--sm { height:28px; padding:0 9px; font-size:12px; }
+.ml-btn--icon { width:34px; padding:0; }
+
+/* Summary cards */
+.ml-stats { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin:10px 0 14px; }
+.ml-stat { text-align:left; padding:10px 12px; border:1px solid var(--ml-line); border-left:4px solid var(--ml-muted); border-radius:8px; background:var(--ml-card); cursor:pointer; transition:box-shadow .15s, transform .15s; }
+.ml-stat:hover { box-shadow:0 3px 10px rgba(0,0,0,.08); transform:translateY(-1px); }
+.ml-stat[aria-pressed=true] { background:var(--ml-brand-soft); box-shadow:inset 0 0 0 1px var(--ml-brand); }
+.ml-stat__label { display:block; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ml-muted); font-weight:700; }
+.ml-stat__value { display:block; font-size:22px; font-weight:800; line-height:1.2; margin-top:2px; }
+.ml-stat--total { border-left-color:#2f5d8a; } .ml-stat--active { border-left-color:var(--ml-brand); } .ml-stat--active .ml-stat__value { color:var(--ml-brand); }
+.ml-stat--pending { border-left-color:var(--ml-warn); } .ml-stat--pending .ml-stat__value { color:var(--ml-warn); }
+.ml-stat--suspended { border-left-color:var(--ml-bad); } .ml-stat--suspended .ml-stat__value { color:var(--ml-bad); }
+.ml-stat--tree { border-left-color:#1b8a8a; }
+
+/* Filters */
+.ml-filters { border:1px solid var(--ml-line); border-radius:10px; background:var(--ml-bg); padding:12px; margin:8px 0; }
+.ml-filters__main { display:grid; grid-template-columns:minmax(0,2.4fr) repeat(3,minmax(0,1fr)) auto; gap:10px; align-items:end; }
+.ml-filters__more { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--ml-line); }
+.ml-field { width:auto; margin:0; display:flex; flex-direction:column; gap:3px; font-size:11px; font-weight:700; color:var(--ml-muted); text-transform:uppercase; letter-spacing:.03em; min-width:0; }
+.ml-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.ml-filters__foot { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-top:10px; }
+.ml-chips { display:flex; flex-wrap:wrap; gap:6px; }
+.ml-chip { display:inline-flex; align-items:center; gap:6px; padding:3px 4px 3px 10px; border-radius:999px; background:#fff; border:1px solid var(--ml-brand); color:var(--ml-brand-dark); font-weight:700; font-size:12px; }
+.ml-chip button { border:0; background:var(--ml-brand-soft); color:var(--ml-brand-dark); border-radius:999px; width:20px; height:20px; cursor:pointer; font-weight:800; line-height:1; }
+.ml-link { border:0; background:none; color:var(--ml-brand-dark); font-weight:700; cursor:pointer; padding:4px 0; text-decoration:underline; }
+
+/* Toolbar + pager */
+.ml-toolbar { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin:10px 0; }
+.ml-bulk { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.ml-bulk select { width:auto; min-width:140px; }
+.ml-pager { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.ml-pager__info { padding:0 4px; white-space:nowrap; }
+.ml-pager input { width:76px; }
+.ml-summary { color:var(--ml-muted); }
+
+/* Table */
+.ml-tablewrap { position:relative; overflow:auto; max-height:72vh; border:1px solid var(--ml-line); border-radius:10px; background:#fff; }
+.ml-table { width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px; }
+.ml-table th { position:sticky; top:0; z-index:1; background:var(--ml-brand); color:#fff; text-align:left; font-weight:700; padding:9px 8px; white-space:nowrap; }
+.ml-table td { padding:8px; border-bottom:1px solid var(--ml-line); vertical-align:middle; }
+.ml-table tbody tr:nth-child(even) td { background:#fafcfb; }
+.ml-table tbody tr:hover td { background:var(--ml-brand-soft); }
+.ml-table tr.is-picked td { background:#dff1e7; }
+.ml-table .num { text-align:right; font-variant-numeric:tabular-nums; }
+.ml-table .nowrap { white-space:nowrap; }
+.ml-table th.num, .ml-table td.num { white-space:nowrap; }
+.ml-table td.ml-wrap { min-width:150px; overflow-wrap:anywhere; }
+.ml-sub { display:block; color:var(--ml-muted); font-size:11.5px; }
+.ml-id { font-weight:800; white-space:nowrap; }
+.ml-copy { border:0; background:none; cursor:pointer; color:var(--ml-muted); padding:0 3px; font-size:12px; }
+.ml-copy:hover { color:var(--ml-brand); }
+.ml-row-actions { display:grid; grid-template-columns:1fr 1fr; gap:4px; min-width:170px; }
+.ml-row-actions select { grid-column:1 / -1; }
+.ml-row-actions select { width:100%; height:28px; padding:2px 6px; font-size:12px; }
+
+.ml-badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.03em; white-space:nowrap; }
+.ml-badge--active { background:var(--ml-brand-soft); color:var(--ml-brand-dark); }
+.ml-badge--pending { background:var(--ml-warn-soft); color:var(--ml-warn); }
+.ml-badge--suspended, .ml-badge--no { background:var(--ml-bad-soft); color:var(--ml-bad); }
+.ml-badge--yes { background:var(--ml-brand-soft); color:var(--ml-brand-dark); }
+.ml-badge--rank { background:#eef2f8; color:#2f5d8a; }
+
+.ml-loading { position:absolute; inset:0; background:rgba(255,255,255,.6); display:flex; align-items:flex-start; justify-content:center; padding-top:60px; font-weight:800; color:var(--ml-brand-dark); z-index:2; }
+.ml-empty { padding:40px 10px; text-align:center; color:var(--ml-muted); font-weight:700; }
+.ml-error { color:var(--ml-bad); font-weight:700; padding:10px; }
+
+/* Cards (phone / tablet) */
+.ml-cards { display:none; position:relative; }
+.ml-card { border:1px solid var(--ml-line); border-radius:10px; background:#fff; padding:12px; margin-bottom:10px; }
+.ml-card.is-picked { border-color:var(--ml-brand); box-shadow:inset 0 0 0 1px var(--ml-brand); }
+.ml-card__top { display:flex; gap:10px; align-items:flex-start; }
+.ml-card__who { flex:1; min-width:0; }
+.ml-card__name { font-weight:800; font-size:14px; overflow-wrap:anywhere; }
+.ml-card__sl { color:var(--ml-muted); font-weight:700; font-size:12px; }
+.ml-card__badges { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+.ml-card__grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 12px; margin:10px 0; }
+.ml-card__grid dt { font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ml-muted); font-weight:700; }
+.ml-card__grid dd { margin:0; font-weight:600; overflow-wrap:anywhere; }
+.ml-card__actions { display:grid; grid-template-columns:1fr auto auto; gap:6px; }
+.ml-selectall { width:auto; display:flex; align-items:center; gap:8px; font-weight:700; margin:4px 0 8px; }
+
+@media (max-width:1100px) {
+  .ml-filters__main { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .ml-filters__main .ml-field--search { grid-column:1 / -1; }
+  .ml-filters__main .ml-actions { grid-column:1 / -1; }
+}
+@media (max-width:900px) {
+  .ml-tablewrap { display:none; }
+  .ml-cards { display:block; }
+  .ml-stats { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .ml-toolbar { flex-direction:column; align-items:stretch; }
+  .ml-pager { justify-content:center; }
+}
+@media (max-width:560px) {
+  .ml-stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  .ml-stat--total { grid-column:1 / -1; }
+  .ml-stat__value { font-size:19px; }
+  .ml-filters { padding:10px; }
+  .ml-actions .ml-btn { flex:1; }
+  .ml-pager__first, .ml-pager__last { display:none; }
+  .ml-bulk select { flex:1; }
+}
+}
+
+/* The admin shell zooms its 1100px canvas to fit small screens; undo that here so the list renders at real size. */
+.ml-root { zoom: var(--admin-unzoom, 1); }
+
+/* Password dialog is portaled outside the admin canvas: give it a solid card and undo the old 100px label width. */
+[role=dialog].ml-dialog { background:#fff; color:#1d2a22; border:1px solid #d9e3dc; border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.25); max-width:min(440px, calc(100vw - 24px)); }
+.ml-dialog label { width:auto; margin:0; font-size:13px; font-weight:700; }
+.ml-dialog h2 { font-size:20px; text-align:left; }
+.ml-dialog input { width:100%; height:38px; }
+[role=dialog].ml-dialog button[type=submit] { background:#009541; color:#fff; }
+[role=dialog].ml-dialog button[type=submit]:hover { background:#007a35; }

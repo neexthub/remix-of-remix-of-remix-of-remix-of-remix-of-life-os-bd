@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Page, DataTable, Msg, fmtDateShort, useAdmin } from "@/components/admin-kit";
-import { EMPTY_FILTERS, memberListQuery, pageCount, serialNo, toCsv, type MemberFilters } from "@/lib/member-list";
+import { Page, Msg, fmtDateShort, useAdmin } from "@/components/admin-kit";
+import { EMPTY_FILTERS, activeFilters, clampPage, memberListQuery, pageCount, serialNo, toCsv, type MemberFilters } from "@/lib/member-list";
 import { adminApi } from "@/lib/admin-api";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import "@/components/admin/member-list.css";
 
 export const Route = createFileRoute("/admin/member-list")({
   head: () => ({ meta: [{ title: "Member List — Life OS Admin" }, { name: "description", content: "Search, filter, sort, export and manage every member: status, password and one-click login." }, { property: "og:title", content: "Member List — Life OS Admin" }, { property: "og:description", content: "Search, filter, sort, export and manage every member: status, password and one-click login." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -24,15 +25,14 @@ type ListResponse = {
   ranks: { id: number; name: string }[];
 };
 
-const btn = { padding: "3px 8px", cursor: "pointer", fontWeight: 700, border: "1px solid #007a35", borderRadius: 3 } as const;
-const lbl = { display: "inline-flex", flexDirection: "column", alignItems: "flex-start", gap: 2, margin: "4px 6px", fontWeight: 700, fontSize: 12 } as const;
 const STATUSES = ["ACTIVE", "PENDING", "SUSPENDED"];
+const statusClass = (s: string) => `ml-badge ml-badge--${s.toLowerCase() === "active" ? "active" : s.toLowerCase() === "pending" ? "pending" : "suspended"}`;
 
 function MemberList() {
   const [draft, setDraft] = useState<MemberFilters>(EMPTY_FILTERS);
   const [applied, setApplied] = useState<MemberFilters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
-  const [jump, setJump] = useState("");
+  const [more, setMore] = useState(false);
   const q = useAdmin<ListResponse>("member-list", "/member-list?" + memberListQuery(applied, page));
   const [msg, setMsg] = useState<{ ok?: boolean; text: string | null }>({ text: null });
   const [pwFor, setPwFor] = useState<Member | null>(null);
@@ -45,16 +45,22 @@ function MemberList() {
   const data = q.data;
   const rows = data?.rows ?? [];
   const counts = data?.counts;
+  const ranks = data?.ranks ?? [];
   const pages = pageCount(counts?.total ?? 0, data?.per ?? Number(applied.per));
+  const offset = data?.offset ?? 0;
+  const tags = activeFilters(applied, ranks);
 
   const apply = (f: MemberFilters, p = 1) => { setApplied(f); setDraft(f); setPage(p); setPicked(new Set()); };
-  const goPage = (p: number) => { setPage(Math.min(pages, Math.max(1, p))); setPicked(new Set()); };
+  const goPage = (p: number) => { setPage(clampPage(p, pages, page)); setPicked(new Set()); };
+  const togglePick = (id: number) => { const n = new Set(picked); if (n.has(id)) n.delete(id); else n.add(id); setPicked(n); };
+  const allPicked = rows.length > 0 && rows.every((m) => picked.has(m.id));
+  const toggleAll = () => setPicked(allPicked ? new Set() : new Set(rows.map((m) => m.id)));
 
-  const setStatus = async (id: number, status: string) => {
+  const setStatus = async (m: Member, status: string) => {
     setMsg({ text: null });
     try {
-      await adminApi(`/members/${id}/status`, { body: { status: status.toLowerCase() } });
-      setMsg({ ok: true, text: "Status updated." });
+      await adminApi(`/members/${m.id}/status`, { body: { status: status.toLowerCase() } });
+      setMsg({ ok: true, text: `${m.life_id} set to ${status}.` });
       await q.refetch();
     } catch (x) { setMsg({ text: (x as Error).message }); }
   };
@@ -102,6 +108,10 @@ function MemberList() {
     }
   };
 
+  const copyId = async (id: string) => {
+    try { await navigator.clipboard.writeText(id); setMsg({ ok: true, text: `Copied ${id}` }); } catch { setMsg({ text: "Copy not allowed in this browser." }); }
+  };
+
   const savePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pwFor) return;
@@ -115,89 +125,181 @@ function MemberList() {
   };
 
   const set = (k: keyof MemberFilters) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setDraft({ ...draft, [k]: e.target.value });
-  const allPicked = rows.length > 0 && rows.every((m) => picked.has(m.id));
-  const chip = (label: string, n: number | undefined, f: Partial<MemberFilters>) => (
-    <button key={label} type="button" onClick={() => apply({ ...applied, status: "", tree_active: "", ...f })} style={{ ...btn, margin: 3, background: "#fff" }}>
-      {label}: {(n ?? 0).toLocaleString()}
-    </button>
+  const openPw = (m: Member) => { setPwFor(m); setPw(""); setPwErr(null); };
+
+  const stat = (cls: string, label: string, n: number | undefined, f: Partial<MemberFilters>) => {
+    const on = Object.entries(f).every(([k, v]) => applied[k as keyof MemberFilters] === v) && (Object.keys(f).length > 0 || (!applied.status && !applied.tree_active));
+    return (
+      <button type="button" className={`ml-stat ml-stat--${cls}`} aria-pressed={on} onClick={() => apply({ ...applied, status: "", tree_active: "", ...f })}>
+        <span className="ml-stat__label">{label}</span>
+        <span className="ml-stat__value">{counts ? (n ?? 0).toLocaleString() : "…"}</span>
+      </button>
+    );
+  };
+
+  const statusSelect = (m: Member, status: string) => (
+    <select value="" aria-label={`Change status for ${m.life_id}`} onChange={(e) => { const v = e.target.value; if (v) void setStatus(m, v); }}>
+      <option value="" disabled>Change…</option>
+      {STATUSES.filter((s) => s !== status).map((s) => <option key={s} value={s}>{s}</option>)}
+    </select>
   );
+  const placement = (m: Member) => (m.placement_life_id ? `${m.placement_life_id} · ${m.placement_side === "L" ? "Left" : "Right"}` : "—");
+  const loading = q.isFetching && <div className="ml-loading" role="status">Loading…</div>;
 
   return (
     <Page title="Member List" center>
-      <form onSubmit={(e) => { e.preventDefault(); apply(draft); }} style={{ margin: "8px 0", textAlign: "left", border: "1px solid #ccc", padding: 6, borderRadius: 4 }} aria-label="Member filters">
-        <label style={lbl}>Search<input type="text" placeholder="ID / name / phone / email" value={draft.q} onChange={set("q")} style={{ width: 190 }} /></label>
-        <label style={lbl}>Status<select value={draft.status} onChange={set("status")}><option value="">All</option>{STATUSES.map((s) => <option key={s} value={s.toLowerCase()}>{s}</option>)}</select></label>
-        <label style={lbl}>Tree Active<select value={draft.tree_active} onChange={set("tree_active")}><option value="">All</option><option value="1">Yes</option><option value="0">No</option></select></label>
-        <label style={lbl}>Side<select value={draft.side} onChange={set("side")}><option value="">All</option><option value="L">Left</option><option value="R">Right</option></select></label>
-        <label style={lbl}>Rank<select value={draft.rank} onChange={set("rank")}><option value="">All</option><option value="none">No rank</option>{(data?.ranks ?? []).map((r) => <option key={r.id} value={String(r.id)}>{r.name}</option>)}</select></label>
-        <label style={lbl}>ID Type<select value={draft.id_format} onChange={set("id_format")}><option value="">All</option><option value="old">Old site (LID-2026-XXXXXX)</option><option value="new">New site (LID-2026-number)</option><option value="other">Other format</option></select></label>
-        <label style={lbl}>Sponsor ID<input type="text" value={draft.sponsor} onChange={set("sponsor")} style={{ width: 130 }} /></label>
-        <label style={lbl}>Min Matching<input type="number" min={0} value={draft.min_matching} onChange={set("min_matching")} style={{ width: 90 }} /></label>
-        <label style={lbl}>Joined From<input type="date" value={draft.from} onChange={set("from")} /></label>
-        <label style={lbl}>Joined To<input type="date" value={draft.to} onChange={set("to")} /></label>
-        <label style={lbl}>Sort<select value={draft.sort} onChange={set("sort")}><option value="new">Newest first</option><option value="old">Oldest first</option><option value="matching">Most matching</option><option value="directs">Most direct sponsors</option><option value="life_id">Account ID A–Z</option></select></label>
-        <label style={lbl}>Per Page<select value={draft.per} onChange={set("per")}>{["25", "50", "100", "200", "500"].map((n) => <option key={n}>{n}</option>)}</select></label>
-        <span style={{ display: "inline-flex", gap: 6, margin: "4px 6px", verticalAlign: "bottom" }}>
-          <input type="submit" value="Search" />
-          <input type="button" value="Reset" onClick={() => apply(EMPTY_FILTERS)} />
-          <input type="button" value={busy ? "Working…" : "Export CSV"} disabled={busy} onClick={exportCsv} />
-        </span>
-      </form>
+      <div className="ml-root">
+        <div className="ml-stats">
+          {stat("total", "Total", counts?.total, {})}
+          {stat("active", "Active", counts?.active, { status: "active" })}
+          {stat("pending", "Pending", counts?.pending, { status: "pending" })}
+          {stat("suspended", "Suspended", counts?.suspended, { status: "suspended" })}
+          {stat("tree", "Tree Active", counts?.tree_active, { tree_active: "1" })}
+        </div>
 
-      <div style={{ margin: "4px 0" }}>
-        {chip("Total", counts?.total, {})}
-        {chip("Active", counts?.active, { status: "active" })}
-        {chip("Pending", counts?.pending, { status: "pending" })}
-        {chip("Suspended", counts?.suspended, { status: "suspended" })}
-        {chip("Tree Active", counts?.tree_active, { tree_active: "1" })}
-      </div>
+        <form className="ml-filters" onSubmit={(e) => { e.preventDefault(); apply(draft); }} aria-label="Member filters">
+          <div className="ml-filters__main">
+            <label className="ml-field ml-field--search">Search<input type="search" placeholder="Account ID / name / phone / email" value={draft.q} onChange={set("q")} /></label>
+            <label className="ml-field">Status<select value={draft.status} onChange={set("status")}><option value="">All</option>{STATUSES.map((s) => <option key={s} value={s.toLowerCase()}>{s}</option>)}</select></label>
+            <label className="ml-field">Sort<select value={draft.sort} onChange={set("sort")}><option value="new">Newest first</option><option value="old">Oldest first</option><option value="matching">Most matching</option><option value="directs">Most direct sponsors</option><option value="life_id">Account ID A–Z</option></select></label>
+            <label className="ml-field">Per Page<select value={draft.per} onChange={set("per")}>{["25", "50", "100", "200", "500"].map((n) => <option key={n}>{n}</option>)}</select></label>
+            <div className="ml-actions">
+              <button type="submit" className="ml-btn ml-btn--primary">Search</button>
+              <button type="button" className="ml-btn" aria-expanded={more} onClick={() => setMore(!more)}>{more ? "Fewer filters ▲" : "More filters ▼"}</button>
+            </div>
+          </div>
+          {more && (
+            <div className="ml-filters__more">
+              <label className="ml-field">Tree Active<select value={draft.tree_active} onChange={set("tree_active")}><option value="">All</option><option value="1">Yes</option><option value="0">No</option></select></label>
+              <label className="ml-field">Side<select value={draft.side} onChange={set("side")}><option value="">All</option><option value="L">Left</option><option value="R">Right</option></select></label>
+              <label className="ml-field">Rank<select value={draft.rank} onChange={set("rank")}><option value="">All</option><option value="none">No rank</option>{ranks.map((r) => <option key={r.id} value={String(r.id)}>{r.name}</option>)}</select></label>
+              <label className="ml-field">ID Type<select value={draft.id_format} onChange={set("id_format")}><option value="">All</option><option value="old">Old site (LID-2026-XXXXXX)</option><option value="new">New site (LID-2026-number)</option><option value="other">Other format</option></select></label>
+              <label className="ml-field">Sponsor ID<input type="text" value={draft.sponsor} onChange={set("sponsor")} placeholder="LID-2026-…" /></label>
+              <label className="ml-field">Min Matching<input type="number" min={0} value={draft.min_matching} onChange={set("min_matching")} /></label>
+              <label className="ml-field">Joined From<input type="date" value={draft.from} onChange={set("from")} /></label>
+              <label className="ml-field">Joined To<input type="date" value={draft.to} onChange={set("to")} /></label>
+            </div>
+          )}
+          <div className="ml-filters__foot">
+            <div className="ml-chips" aria-label="Active filters">
+              {tags.map((t) => (
+                <span key={t.key} className="ml-chip">{t.label}<button type="button" aria-label={`Remove ${t.label}`} onClick={() => apply({ ...applied, [t.key]: "" })}>×</button></span>
+              ))}
+              {tags.length > 0 && <button type="button" className="ml-link" onClick={() => apply({ ...EMPTY_FILTERS, sort: applied.sort, per: applied.per })}>Clear all</button>}
+            </div>
+            <div className="ml-actions">
+              <button type="button" className="ml-btn" onClick={() => apply(EMPTY_FILTERS)}>Reset</button>
+              <button type="button" className="ml-btn" disabled={busy} onClick={exportCsv}>{busy ? "Working…" : "⬇ Export CSV"}</button>
+            </div>
+          </div>
+        </form>
 
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 8, margin: "6px 0" }}>
-        <span>
-          <b>{picked.size}</b> selected{" "}
-          <select value={bulk} onChange={(e) => setBulk(e.target.value)} aria-label="Bulk status"><option value="">Set status…</option>{STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select>{" "}
-          <button type="button" style={btn} disabled={!bulk || picked.size === 0 || busy} onClick={bulkStatus}>Apply</button>
-        </span>
-        <Pager page={page} pages={pages} onGo={goPage} jump={jump} setJump={setJump} />
-      </div>
+        <div className="ml-toolbar">
+          <div className="ml-bulk">
+            <span><b>{picked.size}</b> selected</span>
+            <select value={bulk} onChange={(e) => setBulk(e.target.value)} aria-label="Bulk status"><option value="">Set status…</option>{STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select>
+            <button type="button" className="ml-btn" disabled={!bulk || picked.size === 0 || busy} onClick={bulkStatus}>Apply</button>
+          </div>
+          <Pager page={page} pages={pages} onGo={goPage} />
+        </div>
 
-      <Msg {...msg} />
-      {q.isFetching && <p role="status">Loading…</p>}
-      {q.error ? <p style={{ color: "#C00", fontWeight: 600 }}>{(q.error as Error).message}</p> : (
-        <div style={{ overflowX: "auto" }}>
-          <DataTable
-            head={["", "Sl", "Joined", "Account ID", "Name", "Phone", "Email", "Sponsor", "Placement", "Directs", "Matching", "Rank", "Tree Active", "Status", "Change Status", "Password", "Login"]}
-            rows={rows.length === 0 ? [] : [
-              [<input key="all" type="checkbox" aria-label="Select all on this page" checked={allPicked} onChange={() => setPicked(allPicked ? new Set() : new Set(rows.map((m) => m.id)))} />, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
-              ...rows.map((m, i) => {
+        <Msg {...msg} />
+        {q.error ? <p className="ml-error">{(q.error as Error).message}</p> : (
+          <>
+            <div className="ml-tablewrap">
+              {loading}
+              <table className="ml-table">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" aria-label="Select all on this page" checked={allPicked} onChange={toggleAll} /></th>
+                    <th className="num">Sl</th><th>Member</th><th>Contact</th><th>Sponsor / Placement</th>
+                    <th className="num">Directs</th><th className="num">Matching</th><th>Rank</th><th>Tree</th><th>Status</th><th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.length === 0 && !q.isFetching && <tr><td colSpan={11} className="ml-empty">No member found for these filters.</td></tr>}
+                  {rows.map((m, i) => {
+                    const status = String(m.status ?? "").toUpperCase();
+                    const active = Number(m.is_active) === 1;
+                    return (
+                      <tr key={m.id} className={picked.has(m.id) ? "is-picked" : undefined}>
+                        <td><input type="checkbox" aria-label={`Select ${m.life_id}`} checked={picked.has(m.id)} onChange={() => togglePick(m.id)} /></td>
+                        <td className="num">{serialNo(offset, i).toLocaleString()}</td>
+                        <td>
+                          <span className="ml-id">{m.life_id}<button type="button" className="ml-copy" aria-label={`Copy ${m.life_id}`} onClick={() => copyId(m.life_id)}>⧉</button></span>
+                          <span className="ml-sub">{m.name ?? "—"} · {fmtDateShort(m.created_at)}</span>
+                        </td>
+                        <td className="ml-wrap">{m.phone}<span className="ml-sub">{m.email ?? "—"}</span></td>
+                        <td className="ml-wrap">{m.sponsor_life_id ?? "—"}<span className="ml-sub">{placement(m)}</span></td>
+                        <td className="num">{Number(m.directs).toLocaleString()}</td>
+                        <td className="num">{Number(m.lifetime_matchings).toLocaleString()}</td>
+                        <td>{m.rank_name ? <span className="ml-badge ml-badge--rank">{m.rank_name}</span> : "—"}</td>
+                        <td><span className={`ml-badge ml-badge--${active ? "yes" : "no"}`}>{active ? "YES" : "NO"}</span></td>
+                        <td><span className={statusClass(status)}>{status}</span></td>
+                        <td>
+                          <div className="ml-row-actions">
+                            {statusSelect(m, status)}
+                            <button type="button" className="ml-btn ml-btn--sm" onClick={() => openPw(m)} aria-label={`Set new password for ${m.life_id}`}>Password</button>
+                            <button type="button" className="ml-btn ml-btn--sm ml-btn--primary" onClick={() => loginAs(m)} aria-label={`Login as ${m.life_id}`}>Login</button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="ml-cards">
+              {loading}
+              {rows.length > 0 && <label className="ml-selectall"><input type="checkbox" checked={allPicked} onChange={toggleAll} /> Select all on this page</label>}
+              {rows.length === 0 && !q.isFetching && <div className="ml-empty">No member found for these filters.</div>}
+              {rows.map((m, i) => {
                 const status = String(m.status ?? "").toUpperCase();
                 const active = Number(m.is_active) === 1;
-                return [
-                  <input key="c" type="checkbox" aria-label={`Select ${m.life_id}`} checked={picked.has(m.id)} onChange={() => { const n = new Set(picked); if (n.has(m.id)) n.delete(m.id); else n.add(m.id); setPicked(n); }} />,
-                  serialNo(data?.offset ?? 0, i), fmtDateShort(m.created_at), <b key="id">{m.life_id}</b>, m.name ?? "—", m.phone, m.email ?? "—",
-                  m.sponsor_life_id ?? "—", m.placement_life_id ? `${m.placement_life_id} · ${m.placement_side === "L" ? "Left" : "Right"}` : "—",
-                  Number(m.directs), Number(m.lifetime_matchings).toLocaleString(), m.rank_name ?? "—",
-                  <b key="t" style={{ color: active ? "#009541" : "#C00" }}>{active ? "Yes" : "No"}</b>,
-                  <b key="s" style={{ color: status === "ACTIVE" ? "#009541" : status === "PENDING" ? "#b36b00" : "#C00" }}>{status}</b>,
-                  <select key="cs" defaultValue="" aria-label={`Change status for ${m.life_id}`} onChange={(e) => { const v = e.target.value; if (v) { e.target.value = ""; void setStatus(m.id, v); } }}>
-                    <option value="" disabled>Change…</option>
-                    {STATUSES.filter((s) => s !== status).map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>,
-                  <button key="p" type="button" style={{ ...btn, whiteSpace: "nowrap" }} onClick={() => { setPwFor(m); setPw(""); setPwErr(null); }} aria-label={`Set new password for ${m.life_id}`}>Set Password</button>,
-                  <button key="l" type="button" style={{ ...btn, whiteSpace: "nowrap", background: "#009541", color: "#fff" }} onClick={() => loginAs(m)} aria-label={`Login as ${m.life_id}`}>Login</button>,
-                ];
-              }),
-            ]}
-          />
+                return (
+                  <article key={m.id} className={`ml-card${picked.has(m.id) ? " is-picked" : ""}`} aria-label={m.life_id}>
+                    <div className="ml-card__top">
+                      <input type="checkbox" aria-label={`Select ${m.life_id}`} checked={picked.has(m.id)} onChange={() => togglePick(m.id)} />
+                      <div className="ml-card__who">
+                        <div className="ml-card__sl">#{serialNo(offset, i).toLocaleString()} · {fmtDateShort(m.created_at)}</div>
+                        <div className="ml-card__name">{m.name ?? "—"}</div>
+                        <span className="ml-id">{m.life_id}<button type="button" className="ml-copy" aria-label={`Copy ${m.life_id}`} onClick={() => copyId(m.life_id)}>⧉</button></span>
+                        <div className="ml-card__badges">
+                          <span className={statusClass(status)}>{status}</span>
+                          <span className={`ml-badge ml-badge--${active ? "yes" : "no"}`}>TREE {active ? "ACTIVE" : "INACTIVE"}</span>
+                          {m.rank_name && <span className="ml-badge ml-badge--rank">{m.rank_name}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <dl className="ml-card__grid">
+                      <div><dt>Phone</dt><dd>{m.phone}</dd></div>
+                      <div><dt>Email</dt><dd>{m.email ?? "—"}</dd></div>
+                      <div><dt>Sponsor</dt><dd>{m.sponsor_life_id ?? "—"}</dd></div>
+                      <div><dt>Placement</dt><dd>{placement(m)}</dd></div>
+                      <div><dt>Directs</dt><dd>{Number(m.directs).toLocaleString()}</dd></div>
+                      <div><dt>Total Matching</dt><dd>{Number(m.lifetime_matchings).toLocaleString()}</dd></div>
+                    </dl>
+                    <div className="ml-card__actions">
+                      {statusSelect(m, status)}
+                      <button type="button" className="ml-btn" onClick={() => openPw(m)} aria-label={`Set new password for ${m.life_id}`}>Password</button>
+                      <button type="button" className="ml-btn ml-btn--primary" onClick={() => loginAs(m)} aria-label={`Login as ${m.life_id}`}>Login</button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        <div className="ml-toolbar">
+          <span className="ml-summary">{counts ? `Showing ${counts.total ? serialNo(offset, 0).toLocaleString() : 0}–${(offset + rows.length).toLocaleString()} of ${counts.total.toLocaleString()}` : ""}</span>
+          <Pager page={page} pages={pages} onGo={goPage} />
         </div>
-      )}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "6px 0" }}>
-        <span>{counts ? `Showing ${counts.total ? serialNo(data?.offset ?? 0, 0) : 0}–${(data?.offset ?? 0) + rows.length} of ${counts.total.toLocaleString()}` : ""}</span>
-        <Pager page={page} pages={pages} onGo={goPage} jump={jump} setJump={setJump} />
       </div>
 
       <Dialog open={!!pwFor} onOpenChange={(o) => { if (!o) setPwFor(null); }}>
-        <DialogContent>
+        <DialogContent className="ml-dialog">
           <form onSubmit={savePassword}>
             <DialogHeader>
               <DialogTitle>Set new password</DialogTitle>
@@ -219,15 +321,18 @@ function MemberList() {
   );
 }
 
-function Pager({ page, pages, onGo, jump, setJump }: { page: number; pages: number; onGo: (p: number) => void; jump: string; setJump: (v: string) => void }) {
+function Pager({ page, pages, onGo }: { page: number; pages: number; onGo: (p: number) => void }) {
+  const [jump, setJump] = useState("");
+  const go = () => { if (jump.trim()) { onGo(clampPage(jump, pages, page)); setJump(""); } };
   return (
-    <span style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
-      <button type="button" style={btn} disabled={page <= 1} onClick={() => onGo(1)}>« First</button>
-      <button type="button" style={btn} disabled={page <= 1} onClick={() => onGo(page - 1)}>‹ Prev</button>
-      <span>Page <b>{page}</b> of {pages.toLocaleString()}</span>
-      <button type="button" style={btn} disabled={page >= pages} onClick={() => onGo(page + 1)}>Next ›</button>
-      <button type="button" style={btn} disabled={page >= pages} onClick={() => onGo(pages)}>Last »</button>
-      <input type="number" min={1} max={pages} value={jump} onChange={(e) => setJump(e.target.value)} placeholder="Go to" aria-label="Go to page" style={{ width: 70 }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); if (jump) onGo(Number(jump)); } }} />
-    </span>
+    <nav className="ml-pager" aria-label="Pages">
+      <button type="button" className="ml-btn ml-pager__first" disabled={page <= 1} onClick={() => onGo(1)}>« First</button>
+      <button type="button" className="ml-btn" disabled={page <= 1} onClick={() => onGo(page - 1)} aria-label="Previous page">‹ Prev</button>
+      <span className="ml-pager__info">Page <b>{page.toLocaleString()}</b> of {pages.toLocaleString()}</span>
+      <button type="button" className="ml-btn" disabled={page >= pages} onClick={() => onGo(page + 1)} aria-label="Next page">Next ›</button>
+      <button type="button" className="ml-btn ml-pager__last" disabled={page >= pages} onClick={() => onGo(pages)}>Last »</button>
+      <input type="number" min={1} max={pages} value={jump} onChange={(e) => setJump(e.target.value)} placeholder="Go to" aria-label="Go to page" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); go(); } }} />
+      <button type="button" className="ml-btn ml-btn--icon" onClick={go} aria-label="Go">→</button>
+    </nav>
   );
 }
