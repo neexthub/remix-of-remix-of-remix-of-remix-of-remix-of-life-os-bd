@@ -34,6 +34,7 @@ $router->post('/api/member/register', function () {
     if ($quick) {
         foreach (['phone', 'email', 'name', 'referral_code'] as $f) $b[$f] = trim((string) ($b[$f] ?? ''));
         foreach (['email', 'referral_code'] as $f) if ($b[$f] === '') throw new HttpError("$f required");
+        if (!in_array($b['team'] ?? null, ['L', 'R'], true)) throw new HttpError('Choose Left or Right team');
         if (mb_strlen($b['phone']) > 20) throw new HttpError('Phone is too long');
         if (mb_strlen($b['email']) > 120) throw new HttpError('Email is too long');
         if (($b['confirm_password'] ?? $b['pin']) !== $b['pin']) throw new HttpError('Passwords do not match');
