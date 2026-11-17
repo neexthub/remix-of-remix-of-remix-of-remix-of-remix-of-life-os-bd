@@ -46,6 +46,7 @@ function Tree() {
   const [search, setSearch] = useState(""), [message, setMessage] = useState<string | null>(null);
   const [selected, setSelected] = useState<TreeNode | null>(null), [details, setDetails] = useState<Details | null>(null), [busy, setBusy] = useState(false);
   const [found, setFound] = useState<number | null>(null);
+  const [pendingFind, setPendingFind] = useState(false);
   const [isFull, setIsFull] = useState(false);
   const [pref, setPref] = useState<number | null>(null);
   const centerId = focusId ?? myId;
@@ -259,7 +260,11 @@ function Tree() {
   const find = () => {
     const value = search.trim().toLowerCase();
     const r = value ? rows.find((r) => r[1].toLowerCase() === value || String(r[0]) === value) ?? rows.find((r) => r[2]?.toLowerCase().includes(value) || r[1].toLowerCase().includes(value)) : undefined;
-    if (!r) { setMessage("Member not found in your tree"); return; }
+    if (!r) {
+      // The tree may still be refreshing (e.g. right after adding a member): search again when it arrives.
+      if (q.isFetching) { setPendingFind(true); setMessage("Updating your tree… searching again in a moment."); return; }
+      setMessage("Member not found in your tree"); return;
+    }
     setMessage(null);
     // Open every member on the way down so the found member appears in place.
     const path: number[] = [];
@@ -271,6 +276,7 @@ function Tree() {
     pendingCenter.current = r[0];
     setFound(r[0]); window.setTimeout(() => setFound(null), 3600);
   };
+  useEffect(() => { if (pendingFind && !q.isFetching) { setPendingFind(false); find(); } });
   const toggleFull = async () => {
     try { if (document.fullscreenElement) await document.exitFullscreen(); else await root.current?.requestFullscreen(); }
     catch { setMessage("Full screen is not available in this browser."); }
@@ -306,6 +312,7 @@ function Tree() {
       {q.data ? <div className="bt2-summary" aria-live="polite">
         <span><b>{integer(focusTotals?.all ?? 0)}</b> members</span>
         <span><b>{integer(focusTotals?.active ?? 0)}</b> active</span>
+        {q.isFetching && <span role="status">Updating…</span>}
         <span className="bt2-legend"><i className="bt2-dot bt2-dot--on" /> Active</span>
         <span className="bt2-legend"><i className="bt2-dot bt2-dot--off" /> Inactive</span>
         {mode === "near" && <span className="bt2-legend"><i className="bt2-dot bt2-dot--slot" /> Empty position — tap + to add</span>}
