@@ -381,7 +381,7 @@ $router->post('/api/admin/balance-add', function () {
     $b = Http::body();
     $amount = (float) ($b['amount'] ?? 0);
     if (!is_finite($amount) || $amount == 0.0 || abs($amount) > 1000000) throw new HttpError('Enter a valid amount', 422);
-    $u = DB::one('SELECT id, life_id FROM users WHERE life_id = ?', [trim((string) ($b['life_id'] ?? ''))]);
+    $u = DB::one('SELECT id, life_id FROM users WHERE life_id = ?', [\LifeOS\Username::normalize((string) ($b['life_id'] ?? ''))]);
     if (!$u) throw new HttpError('Member not found', 404);
     if (($b['wallet'] ?? '') === 'DEPOSIT') {
         $code = 'DEP-' . strtoupper(bin2hex(random_bytes(8)));
@@ -478,7 +478,7 @@ function adminMemberId(string $ref): int
 {
     $ref = trim($ref);
     if ($ref === '' || mb_strlen($ref) > 40) throw new HttpError('Account ID required', 422);
-    $id = DB::val('SELECT id FROM users WHERE life_id = ? OR username = ? ORDER BY id LIMIT 1', [$ref, $ref]);
+    $id = DB::val('SELECT id FROM users WHERE life_id = ? OR username = ? ORDER BY id LIMIT 1', [\LifeOS\Username::normalize($ref), $ref]);
     if ($id === false || $id === null) throw new HttpError("Account $ref not found", 404);
     return (int) $id;
 }

@@ -273,7 +273,7 @@ $router->get('/api/member/tree/binary', function () {
     $rootParam = trim((string) ($_GET['root'] ?? ''));
     if ($rootParam !== '') {
         if (mb_strlen($rootParam) > 40) throw new HttpError('User not found in your tree', 404);
-        $dashed = preg_match('/^LID-?(\d{4})-?([A-Z0-9]+)$/i', $rootParam, $m) ? strtoupper("LID-{$m[1]}-{$m[2]}") : $rootParam;
+        $dashed = \LifeOS\Username::normalize($rootParam);
         $row = DB::one('SELECT id FROM users WHERE life_id = ? OR life_id = ? OR username = ? ORDER BY id LIMIT 1', [$rootParam, $dashed, $rootParam]);
         if (!$row) throw new HttpError('User not found in your tree', 404);
         $rid = (int) $row['id'];
@@ -728,7 +728,7 @@ $router->post('/api/member/transfers', function () {
     $amount = round((float) ($b['amount'] ?? 0), 3);
     $code = DB::tx(function () use ($uid, $receiver, $amount, $b) {
         $to = DB::one('SELECT id FROM users WHERE (life_id = ? OR username = ? OR referral_code = ? OR phone = ?) AND status <> "suspended"',
-            [$receiver, $receiver, $receiver, $receiver]);
+            [\LifeOS\Username::normalize($receiver), $receiver, $receiver, $receiver]);
         if (!$to) throw new HttpError('Receiver account not found', 404);
         $toUid = (int) $to['id'];
         if ($toUid === $uid) throw new HttpError('You cannot transfer to your own account', 422);
@@ -757,7 +757,7 @@ $router->post('/api/member/activate-id', function () {
     if (empty($u['transaction_password_hash'])) throw new HttpError('Set your transaction password first', 403);
     if (!password_verify((string) ($b['transaction_password'] ?? ''), (string) $u['transaction_password_hash'])) throw new HttpError('Transaction password is incorrect', 403);
     $out = DB::tx(function () use ($uid, $receiver) {
-        $to = DB::one('SELECT id, life_id FROM users WHERE (life_id = ? OR username = ?) AND status <> "suspended"', [$receiver, $receiver]);
+        $to = DB::one('SELECT id, life_id FROM users WHERE (life_id = ? OR username = ?) AND status <> "suspended"', [\LifeOS\Username::normalize($receiver), $receiver]);
         if (!$to) throw new HttpError('User ID not found', 404);
         $toUid = (int) $to['id'];
         foreach (array_unique([min($uid, $toUid), max($uid, $toUid)]) as $locked) DB::one('SELECT id FROM users WHERE id = ? FOR UPDATE', [$locked]);
@@ -794,7 +794,7 @@ $router->get('/api/member/activate-id/lookup', function () {
     if ($id === '' || mb_strlen($id) > 40) throw new HttpError('User ID required');
     $u = DB::one('SELECT u.id, u.life_id, u.username, u.created_at, t.is_active, sp.life_id AS sponsor_life_id
         FROM users u LEFT JOIN lo_tree t ON t.user_id = u.id LEFT JOIN users sp ON sp.id = t.sponsor_id
-        WHERE (u.life_id = ? OR u.username = ?) AND u.status <> "suspended" LIMIT 1', [$id, $id]);
+        WHERE (u.life_id = ? OR u.username = ?) AND u.status <> "suspended" LIMIT 1', [\LifeOS\Username::normalize($id), $id]);
     if (!$u) throw new HttpError('User ID not found', 404);
     $p = DB::one('SELECT name, district, photo_base64 FROM user_profiles WHERE user_id = ? ORDER BY id LIMIT 1', [(int) $u['id']]) ?? [];
     $active = (bool) DB::one("SELECT id FROM lo_activations WHERE user_id = ? AND payment_status = 'SUCCESS' LIMIT 1", [(int) $u['id']]);
