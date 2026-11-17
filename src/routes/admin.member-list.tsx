@@ -167,7 +167,7 @@ function MemberList() {
         <div style={{ overflowX: "auto" }}>
           <DataTable
             head={["", "Sl", "Joined", "Account ID", "Name", "Phone", "Email", "Sponsor", "Placement", "Directs", "Matching", "Rank", "Tree Active", "Status", "Change Status", "Password", "Login"]}
-            rows={[
+            rows={rows.length === 0 ? [] : [
               [<input key="all" type="checkbox" aria-label="Select all on this page" checked={allPicked} onChange={() => setPicked(allPicked ? new Set() : new Set(rows.map((m) => m.id)))} />, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""],
               ...rows.map((m, i) => {
                 const status = String(m.status ?? "").toUpperCase();
