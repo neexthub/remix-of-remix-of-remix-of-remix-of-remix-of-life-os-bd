@@ -44,9 +44,10 @@ describe("expandable tree with empty positions", () => {
     expect(autoOpenCandidates(l, centred, 800, 600)).toEqual([2]);
     expect(autoOpenCandidates(l, { ...centred, k: 0.2 }, 800, 600)).toEqual([]);
     expect(autoOpenCandidates(l, { x: -m.x - 500, y: 0, k: 1 }, 800, 600)).toEqual([]);
+    expect(autoOpenCandidates(l, { ...centred, y: 60 - m.y }, 800, 600)).toEqual([]);
   });
   it("phones draw fewer first levels than computers", () => {
-    expect(baseLevelsFor(390)).toBe(3); expect(baseLevelsFor(820)).toBe(4); expect(baseLevelsFor(1280)).toBe(5);
+    expect(baseLevelsFor(390)).toBe(2); expect(baseLevelsFor(1280)).toBe(3);
   });
   it("the + link opens the Register Form at that exact position", () => {
     expect(placeJoinPath("LID-2026-937CCC", { parentId: 9, parentLifeId: "LID-2026-AAA", side: "R" })).toBe("/join?ref=LID-2026-937CCC&team=R&place=LID-2026-AAA");

@@ -8,9 +8,9 @@
 .neel .bt2-bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:space-between; margin:8px 0; }
 .neel .bt2-search { display:flex; gap:6px; flex:1 1 260px; min-width:0; margin:0; }
 .neel .bt2-search input { flex:1; min-width:0; width:auto; height:36px; padding:4px 10px; border:1px solid #c9d6ea; border-radius:8px; font-size:14px; font-family:inherit; }
-.neel .bt2-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:36px; min-width:36px; padding:0 12px; border:1px solid #c9d6ea; border-radius:8px; background:#fff; color:var(--bt-accent); font-weight:700; font-size:13px; font-family:inherit; cursor:pointer; white-space:nowrap; transition:background .15s, color .15s, border-color .15s; }
+.neel .bt2-root .bt2-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:36px; min-width:36px; padding:0 12px; border:1px solid #c9d6ea; border-radius:8px; background:#fff; color:var(--bt-accent); font-weight:700; font-size:13px; font-family:inherit; cursor:pointer; white-space:nowrap; transition:background .15s, color .15s, border-color .15s; }
 .neel .bt2-btn:hover { border-color:var(--bt-accent); background:#eef3fb; }
-.neel .bt2-btn[aria-pressed=true], .neel .bt2-btn--primary { background:var(--bt-accent); border-color:var(--bt-accent); color:#fff; }
+.neel .bt2-root .bt2-btn[aria-pressed=true], .neel .bt2-root .bt2-btn--primary, .neel .bt2-root button[type=submit].bt2-btn--primary { background:var(--bt-accent); border-color:var(--bt-accent); color:#fff; }
 .neel .bt2-btn--icon { padding:0; width:36px; }
 .neel .bt2-tools { display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
 .neel .bt2-size { display:flex; align-items:center; gap:8px; padding:0 10px; height:36px; border:1px solid #c9d6ea; border-radius:8px; background:#fff; font-weight:700; color:var(--bt-accent); }
@@ -40,9 +40,9 @@
 .neel .bt2-card--found { animation: bt2-pulse 1.1s ease-in-out 3; }
 @keyframes bt2-pulse { 50% { box-shadow:0 0 0 8px rgba(242,201,76,.65), 0 6px 18px rgba(13,33,64,.18); } }
 .neel .bt2-main { display:block; width:100%; padding:0; margin:0; border:0; background:none; cursor:pointer; color:inherit; font:inherit; }
-.neel .bt2-avatar { position:relative; width:52px; height:52px; margin:0 auto 4px; border-radius:50%; overflow:hidden; border:3px solid var(--bt-inactive); background:var(--bt-inactive-soft); }
+.neel .bt2-avatar { display:block; position:relative; width:52px; height:52px; margin:0 auto 4px; border-radius:50%; overflow:hidden; border:3px solid var(--bt-inactive); background:var(--bt-inactive-soft); }
 .neel .bt2-card--on .bt2-avatar { border-color:var(--bt-active); background:var(--bt-active-soft); }
-.neel .bt2-avatar img { width:100%; height:100%; object-fit:cover; }
+.neel .bt2-avatar img { display:block; width:100%; height:100%; max-width:none; object-fit:cover; }
 .neel .bt2-name { display:block; font-weight:800; font-size:13px; line-height:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .neel .bt2-id { display:block; font-size:11px; line-height:14px; color:var(--bt-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .neel .bt2-counts { display:flex; justify-content:space-between; gap:4px; margin-top:5px; padding-top:5px; border-top:1px dashed #d8e0ec; font-size:11px; font-weight:700; color:var(--bt-muted); }
@@ -55,10 +55,10 @@
 /* Empty position: faint silhouette ("watermark") with a + to register a member right there. */
 .neel .bt2-slot { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; width:136px; height:124px; border-radius:14px; border:2px dashed var(--bt-line-soft); background:rgba(255,255,255,.55); color:var(--bt-accent); text-decoration:none; cursor:pointer; transition:background .15s, border-color .15s, transform .15s; }
 .neel .bt2-slot:hover, .neel .bt2-slot:focus-visible { background:#eef3fb; border-color:var(--bt-accent); transform:translateY(-2px); text-decoration:none; }
-.neel .bt2-ghost { position:relative; width:52px; height:52px; border-radius:50%; background:#e3eaf5; opacity:.75; overflow:hidden; }
+.neel .bt2-ghost { display:block; position:relative; width:52px; height:52px; border-radius:50%; background:#e3eaf5; opacity:.75; overflow:hidden; }
 .neel .bt2-ghost::before { content:""; position:absolute; left:50%; top:10px; width:18px; height:18px; margin-left:-9px; border-radius:50%; background:#c3d0e4; }
 .neel .bt2-ghost::after { content:""; position:absolute; left:50%; top:31px; width:34px; height:30px; margin-left:-17px; border-radius:50% 50% 0 0; background:#c3d0e4; }
-.neel .bt2-plus { position:absolute; margin-top:-26px; margin-left:34px; width:26px; height:26px; border-radius:50%; background:var(--bt-accent); color:#fff; font-size:20px; line-height:25px; font-weight:800; text-align:center; box-shadow:0 2px 6px rgba(9,63,137,.35); }
+.neel .bt2-plus { display:block; position:absolute; margin-top:-26px; margin-left:34px; width:26px; height:26px; border-radius:50%; background:var(--bt-accent); color:#fff; font-size:20px; line-height:25px; font-weight:800; text-align:center; box-shadow:0 2px 6px rgba(9,63,137,.35); }
 .neel .bt2-slot-label { font-size:12px; font-weight:800; }
 .neel .bt2-slot-sub { font-size:10.5px; color:var(--bt-muted); }
 

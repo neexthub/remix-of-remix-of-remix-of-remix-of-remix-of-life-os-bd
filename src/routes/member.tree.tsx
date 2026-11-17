@@ -62,6 +62,8 @@ function Tree() {
   const pendingCenter = useRef<number | null>(null);
   const [, setFrame] = useState(0);
   const prevLayout = useRef<ExpandLayout | null>(null);
+  // Auto-open starts only after the member drags/pinches/scrolls, so the first screen stays calm.
+  const userMoved = useRef(false);
 
   useLayoutEffect(() => {
     const before = prevLayout.current;
@@ -107,7 +109,7 @@ function Tree() {
     const behavior = createZoom<HTMLDivElement, unknown>().scaleExtent([0.0005, MAX_K])
       .extent(() => [[0, 0], [el.clientWidth, el.clientHeight]])
       .filter((event) => !event.target.closest?.("button,a,input") && !event.button)
-      .on("zoom", (event) => setView({ x: event.transform.x, y: event.transform.y, k: event.transform.k }));
+      .on("zoom", (event) => { if (event.sourceEvent) userMoved.current = true; setView({ x: event.transform.x, y: event.transform.y, k: event.transform.k }); });
     controller.current = behavior;
     const selection = select(el);
     selection.call(behavior).on("dblclick.zoom", null);
@@ -117,7 +119,7 @@ function Tree() {
   }, []);
   useEffect(() => {
     const saved = Number(window.localStorage.getItem(SIZE_KEY));
-    setPref(saved >= MIN_K && saved <= MAX_K ? saved : window.innerWidth < 600 ? 0.8 : 1);
+    setPref(saved >= MIN_K && saved <= MAX_K ? saved : window.innerWidth < 600 ? 0.72 : 1);
     const onFs = () => setIsFull(document.fullscreenElement === root.current);
     document.addEventListener("fullscreenchange", onFs);
     return () => document.removeEventListener("fullscreenchange", onFs);
@@ -182,8 +184,8 @@ function Tree() {
   useEffect(() => {
     if (!auto || mode !== "near" || layout.nodes.length > MAX_DRAWN) return;
     const timer = window.setTimeout(() => {
-      if (anim.current) return;
-      const ids = autoOpenCandidates(layout, viewRef.current, size.width, size.height, 0.45, 6);
+      if (anim.current || !userMoved.current) return;
+      const ids = autoOpenCandidates(layout, viewRef.current, size.width, size.height, 0.45, 2);
       if (ids.length) openMembers(ids);
     }, 380);
     return () => window.clearTimeout(timer);

@@ -120,20 +120,21 @@ export function layoutExpandable(rows: TreeRow[], rootId: number, baseLevels: nu
  * Collapsed members (with hidden team below) that sit well inside the screen at a readable size.
  * Panning toward a side opens these so that side's tree grows into view automatically.
  */
-export function autoOpenCandidates(layout: ExpandLayout, view: { x: number; y: number; k: number }, width: number, height: number, minK = 0.45, limit = 6): number[] {
+export function autoOpenCandidates(layout: ExpandLayout, view: { x: number; y: number; k: number }, width: number, height: number, minK = 0.45, limit = 6, fromY = 0.4): number[] {
   if (view.k < minK) return [];
   const mx = width * 0.08, my = height * 0.08;
   return layout.nodes
     .filter((n) => !n.slot && n.hiddenBelow > 0)
     .map((n) => ({ n, sx: view.x + n.x * view.k, sy: view.y + n.y * view.k }))
-    .filter(({ sx, sy }) => sx >= mx && sx <= width - mx && sy >= my && sy <= height - my - 40)
-    .sort((a, b) => a.sy - b.sy || Math.abs(a.sx - width / 2) - Math.abs(b.sx - width / 2))
+    // Only the lower part of the screen (where the user is heading); members near the top stay as they are.
+    .filter(({ sx, sy }) => sx >= mx && sx <= width - mx && sy >= Math.max(my, height * fromY) && sy <= height - my - 40)
+    .sort((a, b) => Math.abs(a.sx - width / 2) - Math.abs(b.sx - width / 2) || a.sy - b.sy)
     .slice(0, limit)
     .map(({ n }) => n.row[0]);
 }
 
 /** Levels drawn first, by screen width: fewer on phones so each member stays readable. */
-export const baseLevelsFor = (screenWidth: number) => (screenWidth < 600 ? 3 : screenWidth < 1100 ? 4 : 5);
+export const baseLevelsFor = (screenWidth: number) => (screenWidth < 600 ? 2 : 3);
 
 /** Register Form link that puts the new member exactly into an empty tree position. */
 export function placeJoinPath(sponsorLifeId: string, slot: EmptySlot) {
