@@ -334,8 +334,8 @@ $router->get('/api/admin/member-list', function () {
         else { $w[] = "$rankSql = ?"; $p[] = (int) $rk; }
     }
     if (($fmt = $g('id_format')) === 'old') $w[] = "u.life_id REGEXP '^LID-2026-[0-9A-F]{6}$'";
-    elseif ($fmt === 'new') $w[] = "u.life_id REGEXP '^LID-2026-[0-9]{8}$'";
-    elseif ($fmt === 'other') $w[] = "u.life_id NOT REGEXP '^LID-2026-'";
+    elseif ($fmt === 'new') $w[] = "u.life_id REGEXP '^([0-9]{6}|LID-2026-[0-9]{8})$'";
+    elseif ($fmt === 'other') $w[] = "u.life_id NOT REGEXP '^(LID-2026-|[0-9]{6}$)'";
     $mm = $g('min_matching');
     if ($mm !== '') { $w[] = 'COALESCE(t.lifetime_matchings, 0) >= ?'; $p[] = max(0, (int) $mm); }
     $where = $w ? ' WHERE ' . implode(' AND ', $w) : '';

@@ -1,15 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { memberApi, memberToken } from "@/lib/member-api";
 import { useEffect, useRef, useState } from "react";
+import { AlertCircle, IdCard, KeyRound, Loader2, LogIn, RefreshCw, ShieldCheck, UserPlus } from "lucide-react";
+import { memberApi, memberToken } from "@/lib/member-api";
 import { NEEL_LINKS } from "@/components/neel-frame";
+import { memberKitAsset } from "@/lib/member-kit-assets";
+import { LxField, LxInput, LxPassword } from "@/components/auth/auth-ui";
+import "@/components/auth/auth-modern.css";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Member Login — Life OS" },
-      { name: "description", content: "Sign in to your Life OS member account." },
+      { name: "description", content: "Sign in to your Life OS member account or register a new one." },
       { property: "og:title", content: "Member Login — Life OS" },
-      { property: "og:description", content: "Sign in to your Life OS member account." },
+      { property: "og:description", content: "Sign in to your Life OS member account or register a new one." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -18,7 +22,7 @@ export const Route = createFileRoute("/login")({
   component: Login,
 });
 
-/** Reference index.php login: glass form, three centred fields, image captcha, Login / Cancel. */
+/** Member login: Account ID, password and the server's one-time image captcha; Register sits where Cancel used to be. */
 function Login() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -41,7 +45,7 @@ function Login() {
     setErr(null); setBusy(true);
     try {
       memberToken.clear();
-      const r = await memberApi<{ token: string }>("/login", { body: { username: fd.get("username"), password: fd.get("password"), challenge_id: captcha.challenge_id, security_code: fd.get("security_code") } });
+      const r = await memberApi<{ token: string }>("/login", { body: { username: String(fd.get("username") ?? "").trim(), password: fd.get("password"), challenge_id: captcha.challenge_id, security_code: fd.get("security_code") } });
       memberToken.set(r.token);
       navigate({ to: "/member" });
     } catch (x) {
@@ -51,36 +55,40 @@ function Login() {
   };
   return (
     <div className="neel-viewport neel-login-page">
-      <div className="lo-login-wrap">
-        <div className="login_logo" />
-        <form className="form" onSubmit={submit} autoComplete="off">
-          <br />
-          <table width={240} cellPadding={5} cellSpacing={5}>
-            <tbody>
-              <tr><td align="center"><Link to="/" aria-label="Life OS home"><img src="/member-kit/neel/logo-word.png" alt="Life OS" style={{ height: 60, width: "auto" }} /></Link></td></tr>
-              <tr><td><input type="text" name="username" aria-label="Account ID" placeholder="Account ID" required autoComplete="username" /></td></tr>
-              <tr><td><input type="password" name="password" aria-label="Account Login Password" placeholder="Account Login Password" required autoComplete="current-password" /></td></tr>
-              <tr><td><input ref={codeInput} type="text" name="security_code" aria-label="Login Capcha Code" placeholder="Login Capcha Code" required pattern="[0-9]{4}" maxLength={4} inputMode="numeric" /></td></tr>
-              <tr>
-                <td style={{ textAlign: "center" }}>
-                  <button type="button" className="lo-captcha-btn" aria-label="Refresh security code" title="Refresh security code" disabled={loadingCaptcha || busy} onClick={() => { setErr(null); void refreshCaptcha(); }}>
-                    {captcha ? <img src={captcha.image} alt="Security Code" width={140} height={30} /> : <span>{loadingCaptcha ? "Loading…" : "Retry"}</span>}
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td style={{ textAlign: "center" }}>
-                  <input type="submit" value={busy ? "Signing in…" : "Login"} disabled={busy || loadingCaptcha || !captcha} />{" "}
-                  <input type="button" value="Cancel" onClick={() => navigate({ to: "/" })} />
-                </td>
-              </tr>
-              <tr><th colSpan={3} role={err ? "alert" : undefined} className="lo-login-error">{err}</th></tr>
-              <tr><th align="right" style={{ textAlign: "right" }}><Link to="/contact">Forgot Login Password?</Link></th></tr>
-              <tr><td style={{ textAlign: "center" }}>New member? <Link to="/join" className="lo-reg-link">Register</Link></td></tr>
-            </tbody>
-          </table>
-          <div className="lo-login-footer">CopyRights©{new Date().getFullYear()} By <br />Life OS Limited</div>
-        </form>
+      <div className="lx">
+        <div className="lx-card lx-card--login">
+          <div className="lx-head">
+            <Link to="/" aria-label="Life OS home"><img className="lx-logo" src={memberKitAsset("/member-kit/neel/logo-word.png")} alt="Life OS" /></Link>
+            <h1 className="lx-title">Welcome back</h1>
+            <p className="lx-sub">Log in to your member account</p>
+          </div>
+          <form className="lx-body" onSubmit={submit} autoComplete="off">
+            {err && <div className="lx-alert" role="alert"><AlertCircle aria-hidden="true" />{err}</div>}
+            <LxField label="Account ID" htmlFor="username">
+              <LxInput id="username" name="username" icon={<IdCard />} type="text" placeholder="Account ID or mobile number" required autoComplete="username" />
+            </LxField>
+            <LxField label="Password" htmlFor="password">
+              <LxPassword id="password" name="password" icon={<KeyRound />} placeholder="Your password" required autoComplete="current-password" />
+            </LxField>
+            <div className="lx-field">
+              <label className="lx-label" htmlFor="security_code">Security Code</label>
+              <div className="lx-captcha">
+                <LxInput id="security_code" name="security_code" icon={<ShieldCheck />} type="text" placeholder="4 digits" required pattern="[0-9]{4}" maxLength={4} inputMode="numeric" inputRef={codeInput} />
+                <button type="button" className="lx-captcha-img" aria-label="Refresh security code" title="Tap for a new code" disabled={loadingCaptcha || busy} onClick={() => { setErr(null); void refreshCaptcha(); }}>
+                  {captcha ? <img src={captcha.image} alt="Security Code" width={112} height={26} /> : <span>{loadingCaptcha ? "Loading…" : "Retry"}</span>}
+                  <RefreshCw aria-hidden="true" className={loadingCaptcha ? "animate-spin" : undefined} />
+                </button>
+              </div>
+            </div>
+            <div className="lx-row"><span /><Link to="/contact" className="lx-link">Forgot password?</Link></div>
+            <button type="submit" className="lx-btn lx-btn--primary lx-btn--block" disabled={busy || loadingCaptcha || !captcha}>
+              {busy ? <><Loader2 className="animate-spin" aria-hidden="true" />Logging in…</> : <><LogIn aria-hidden="true" />Login</>}
+            </button>
+            <div className="lx-divider">New to Life OS?</div>
+            <Link to="/join" className="lx-btn lx-btn--ghost lx-btn--block"><UserPlus aria-hidden="true" />Register a new account</Link>
+          </form>
+          <div className="lx-foot">© {new Date().getFullYear()} Life OS Limited</div>
+        </div>
       </div>
     </div>
   );

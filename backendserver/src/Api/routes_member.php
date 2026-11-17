@@ -104,7 +104,7 @@ $router->post('/api/member/register', function () {
         DB::one('SELECT id FROM lo_placement_lock WHERE id = 1 FOR UPDATE');
         if (!$sponsorId && DB::one('SELECT user_id FROM lo_tree LIMIT 1')) throw new HttpError('A sponsor referral link is required to register');
         if ($sponsorId && !DB::one('SELECT id FROM users WHERE id = ? AND status <> "suspended"', [$sponsorId])) throw new HttpError('Sponsor unavailable');
-        // The Account ID previewed on the Register Form (LID-2026-<number>) is the member's ID everywhere:
+        // The Account ID previewed on the Register Form (6-digit number) is the member's ID everywhere:
         // Life ID, membership no and login name. Checked under the placement lock so two joins never share it.
         $lifeId = \LifeOS\Username::fromToken((string) ($b['username'] ?? ''), (string) ($b['username_token'] ?? '')) ?? \LifeOS\Username::generate();
         $refCode = strtoupper(bin2hex(random_bytes(4)));

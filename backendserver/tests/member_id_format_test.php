@@ -25,7 +25,7 @@ check('LO12345678 maps to LID-2026-12345678', Username::normalize('LO12345678') 
 check('dashless old ID keeps its letters', Username::normalize('lid2026937ccc') === 'LID-2026-937CCC');
 
 $preview = call('GET', '/username/new')['data'] ?? [];
-check('Register Form preview is LID-2026-<8 digits>', (bool) preg_match('/^LID-2026-\d{8}$/', (string) ($preview['username'] ?? '')));
+check('Register Form preview is a 6-digit number', (bool) preg_match('/^[1-9]\d{5}$/', (string) ($preview['username'] ?? '')));
 $n = random_int(10000000, 99999999);
 $r = call('POST', '/register', ['name' => 'ID Format', 'phone' => "017$n", 'email' => "id$n@example.com", 'password' => 'pass1234', 'confirm_password' => 'pass1234',
     'accepted_terms' => 1, 'referral_code' => $sponsor, 'team' => 'L', 'username' => $preview['username'] ?? '', 'username_token' => $preview['username_token'] ?? '']);

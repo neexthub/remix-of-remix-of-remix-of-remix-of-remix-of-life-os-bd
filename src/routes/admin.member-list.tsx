@@ -173,7 +173,7 @@ function MemberList() {
               <label className="ml-field">Tree Active<select value={draft.tree_active} onChange={set("tree_active")}><option value="">All</option><option value="1">Yes</option><option value="0">No</option></select></label>
               <label className="ml-field">Side<select value={draft.side} onChange={set("side")}><option value="">All</option><option value="L">Left</option><option value="R">Right</option></select></label>
               <label className="ml-field">Rank<select value={draft.rank} onChange={set("rank")}><option value="">All</option><option value="none">No rank</option>{ranks.map((r) => <option key={r.id} value={String(r.id)}>{r.name}</option>)}</select></label>
-              <label className="ml-field">ID Type<select value={draft.id_format} onChange={set("id_format")}><option value="">All</option><option value="old">Old site (LID-2026-XXXXXX)</option><option value="new">New site (LID-2026-number)</option><option value="other">Other format</option></select></label>
+              <label className="ml-field">ID Type<select value={draft.id_format} onChange={set("id_format")}><option value="">All</option><option value="old">Old site (LID-2026-XXXXXX)</option><option value="new">New site (6-digit number)</option><option value="other">Other format</option></select></label>
               <label className="ml-field">Sponsor ID<input type="text" value={draft.sponsor} onChange={set("sponsor")} placeholder="LID-2026-…" /></label>
               <label className="ml-field">Min Matching<input type="number" min={0} value={draft.min_matching} onChange={set("min_matching")} /></label>
               <label className="ml-field">Joined From<input type="date" value={draft.from} onChange={set("from")} /></label>
