@@ -36,6 +36,8 @@ final class Commission
                 [self::code('SALE'), $activationId, $userId]
             );
             DB::run('UPDATE lo_tree SET is_active = 1 WHERE user_id = ?', [$userId]);
+            // A paid activation makes the account Active (admins can still suspend it afterwards).
+            DB::run("UPDATE users SET status = 'active' WHERE id = ? AND status = 'pending'", [$userId]);
 
             // Service Cashback ৳100 — own ledger, never withdrawable/transferable.
             self::ledger('CASHBACK', $userId, Plan::CASHBACK, $activationId, $saleId, null, null, 'Service cashback (service-use only)');
