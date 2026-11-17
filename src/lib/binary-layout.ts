@@ -120,14 +120,14 @@ export function layoutExpandable(rows: TreeRow[], rootId: number, baseLevels: nu
  * Collapsed members (with hidden team below) that sit well inside the screen at a readable size.
  * Panning toward a side opens these so that side's tree grows into view automatically.
  */
-export function autoOpenCandidates(layout: ExpandLayout, view: { x: number; y: number; k: number }, width: number, height: number, minK = 0.45, limit = 6, fromY = 0.4): number[] {
+export function autoOpenCandidates(layout: ExpandLayout, view: { x: number; y: number; k: number }, width: number, height: number, minK = 0.45, limit = 6): number[] {
   if (view.k < minK) return [];
   const mx = width * 0.08, my = height * 0.08;
   return layout.nodes
     .filter((n) => !n.slot && n.hiddenBelow > 0)
     .map((n) => ({ n, sx: view.x + n.x * view.k, sy: view.y + n.y * view.k }))
-    // Only the lower part of the screen (where the user is heading); members near the top stay as they are.
-    .filter(({ sx, sy }) => sx >= mx && sx <= width - mx && sy >= Math.max(my, height * fromY) && sy <= height - my - 40)
+    // Fully on screen, with room below it so the opened members appear in view.
+    .filter(({ sx, sy }) => sx >= mx && sx <= width - mx && sy >= 62 * view.k && sy + NODE_H * view.k * 0.9 <= height - my)
     .sort((a, b) => Math.abs(a.sx - width / 2) - Math.abs(b.sx - width / 2) || a.sy - b.sy)
     .slice(0, limit)
     .map(({ n }) => n.row[0]);

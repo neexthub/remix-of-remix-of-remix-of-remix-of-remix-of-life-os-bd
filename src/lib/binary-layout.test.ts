@@ -44,7 +44,7 @@ describe("expandable tree with empty positions", () => {
     expect(autoOpenCandidates(l, centred, 800, 600)).toEqual([2]);
     expect(autoOpenCandidates(l, { ...centred, k: 0.2 }, 800, 600)).toEqual([]);
     expect(autoOpenCandidates(l, { x: -m.x - 500, y: 0, k: 1 }, 800, 600)).toEqual([]);
-    expect(autoOpenCandidates(l, { ...centred, y: 60 - m.y }, 800, 600)).toEqual([]);
+    expect(autoOpenCandidates(l, { ...centred, y: 560 - m.y }, 800, 600)).toEqual([]);
   });
   it("phones draw fewer first levels than computers", () => {
     expect(baseLevelsFor(390)).toBe(2); expect(baseLevelsFor(1280)).toBe(3);
