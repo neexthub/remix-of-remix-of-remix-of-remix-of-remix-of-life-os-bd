@@ -229,8 +229,8 @@ function MemberList() {
                           <span className="ml-id">{m.life_id}<button type="button" className="ml-copy" aria-label={`Copy ${m.life_id}`} onClick={() => copyId(m.life_id)}>⧉</button></span>
                           <span className="ml-sub">{m.name ?? "—"} · {fmtDateShort(m.created_at)}</span>
                         </td>
-                        <td className="nowrap">{m.phone}<span className="ml-sub">{m.email ?? "—"}</span></td>
-                        <td className="nowrap">{m.sponsor_life_id ?? "—"}<span className="ml-sub">{placement(m)}</span></td>
+                        <td className="ml-wrap">{m.phone}<span className="ml-sub">{m.email ?? "—"}</span></td>
+                        <td className="ml-wrap">{m.sponsor_life_id ?? "—"}<span className="ml-sub">{placement(m)}</span></td>
                         <td className="num">{Number(m.directs).toLocaleString()}</td>
                         <td className="num">{Number(m.lifetime_matchings).toLocaleString()}</td>
                         <td>{m.rank_name ? <span className="ml-badge ml-badge--rank">{m.rank_name}</span> : "—"}</td>

@@ -1,10 +1,12 @@
 /* Admin Member List: scoped styles (ml-*). Desktop table above 900px, member cards below. */
-.ml-root { --ml-brand:#009541; --ml-brand-dark:#007a35; --ml-brand-soft:#e8f6ee; --ml-warn:#b36b00; --ml-warn-soft:#fff4e0; --ml-bad:#c62828; --ml-bad-soft:#fdecec; --ml-ink:#1d2a22; --ml-muted:#5f6f66; --ml-line:#d9e3dc; --ml-card:#fff; --ml-bg:#f5f8f6;
+/* Nested under the shell so these beat the reference admin stylesheets. */
+.lifeos-member .ml-root {
+& { --ml-brand:#009541; --ml-brand-dark:#007a35; --ml-brand-soft:#e8f6ee; --ml-warn:#b36b00; --ml-warn-soft:#fff4e0; --ml-bad:#c62828; --ml-bad-soft:#fdecec; --ml-ink:#1d2a22; --ml-muted:#5f6f66; --ml-line:#d9e3dc; --ml-card:#fff; --ml-bg:#f5f8f6;
   text-align:left; color:var(--ml-ink); font-size:13px; }
-.ml-root *, .ml-root *::before, .ml-root *::after { box-sizing:border-box; }
-.ml-root input, .ml-root select { font:inherit; color:inherit; height:34px; padding:4px 8px; border:1px solid var(--ml-line); border-radius:6px; background:#fff; width:100%; min-width:0; }
-.ml-root input[type=checkbox] { width:18px; height:18px; padding:0; accent-color:var(--ml-brand); cursor:pointer; }
-.ml-root input:focus-visible, .ml-root select:focus-visible, .ml-btn:focus-visible { outline:2px solid var(--ml-brand); outline-offset:1px; }
+& *, & *::before, & *::after { box-sizing:border-box; }
+& input, & select { font:inherit; color:inherit; height:34px; padding:4px 8px; border:1px solid var(--ml-line); border-radius:6px; background:#fff; width:100%; min-width:0; }
+& input[type=checkbox] { width:18px; height:18px; padding:0; accent-color:var(--ml-brand); cursor:pointer; }
+& input:focus-visible, & select:focus-visible, .ml-btn:focus-visible { outline:2px solid var(--ml-brand); outline-offset:1px; }
 
 .ml-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; height:34px; padding:0 12px; border-radius:6px; border:1px solid var(--ml-line); background:#fff; color:var(--ml-ink); font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; transition:background .15s,border-color .15s; }
 .ml-btn:hover:not(:disabled) { border-color:var(--ml-brand); background:var(--ml-brand-soft); }
@@ -57,12 +59,15 @@
 .ml-table tr.is-picked td { background:#dff1e7; }
 .ml-table .num { text-align:right; font-variant-numeric:tabular-nums; }
 .ml-table .nowrap { white-space:nowrap; }
+.ml-table th.num, .ml-table td.num { white-space:nowrap; }
+.ml-table td.ml-wrap { min-width:150px; overflow-wrap:anywhere; }
 .ml-sub { display:block; color:var(--ml-muted); font-size:11.5px; }
 .ml-id { font-weight:800; white-space:nowrap; }
 .ml-copy { border:0; background:none; cursor:pointer; color:var(--ml-muted); padding:0 3px; font-size:12px; }
 .ml-copy:hover { color:var(--ml-brand); }
-.ml-row-actions { display:flex; gap:6px; align-items:center; }
-.ml-row-actions select { width:112px; height:28px; padding:2px 6px; font-size:12px; }
+.ml-row-actions { display:grid; grid-template-columns:1fr 1fr; gap:4px; min-width:170px; }
+.ml-row-actions select { grid-column:1 / -1; }
+.ml-row-actions select { width:100%; height:28px; padding:2px 6px; font-size:12px; }
 
 .ml-badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:800; letter-spacing:.03em; white-space:nowrap; }
 .ml-badge--active { background:var(--ml-brand-soft); color:var(--ml-brand-dark); }
@@ -111,3 +116,7 @@
   .ml-pager__first, .ml-pager__last { display:none; }
   .ml-bulk select { flex:1; }
 }
+}
+
+/* The admin shell zooms its 1100px canvas to fit small screens; undo that here so the list renders at real size. */
+.ml-root { zoom: var(--admin-unzoom, 1); }
