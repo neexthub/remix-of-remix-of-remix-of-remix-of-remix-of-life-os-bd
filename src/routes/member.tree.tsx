@@ -368,7 +368,7 @@ function Tree() {
         {mode === "near" && <span className="bt2-legend"><i className="bt2-dot bt2-dot--slot" /> Empty position — tap + to add</span>}
       </div> : <div className="bt2-summary" role="status">Loading your tree…</div>}
 
-      <div ref={box} className="bt2-surface" role="region" aria-label="Binary tree. Drag or scroll to move; the tree builds itself where you go. Use the size bar to resize." tabIndex={0} onKeyDown={(e) => {
+      <div ref={box} className="bt2-surface" data-built={layout.nodes.length} data-open={open.size} role="region" aria-label="Binary tree. Drag or scroll to move; the tree builds itself where you go. Use the size bar to resize." tabIndex={0} onKeyDown={(e) => {
         if (!box.current || !controller.current) return;
         const move: Record<string, [number, number]> = { ArrowLeft: [120 / view.k, 0], ArrowRight: [-120 / view.k, 0], ArrowUp: [0, 120 / view.k], ArrowDown: [0, -120 / view.k] };
         const delta = move[e.key];
