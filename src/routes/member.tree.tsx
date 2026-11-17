@@ -207,6 +207,7 @@ function Tree() {
     return () => window.clearTimeout(timer);
   }, [view, layout, size, mode, openMembers]);
 
+  useEffect(() => { (window as unknown as Record<string, unknown>).__bt = { layout, view, size, cands: autoOpenCandidates(layout, view, size.width, size.height, 0.4, 4), moved: userMoved.current, anim: !!anim.current }; });
   // When the member moves to a new area, the branches left behind are closed (kept members stay in place).
   useEffect(() => {
     if (mode !== "near" || !open.size) return;
