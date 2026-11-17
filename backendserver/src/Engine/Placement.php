@@ -27,7 +27,7 @@ final class Placement
      * Without a team, legacy placement searches for the first free binary slot.
      * Must be called inside a transaction.
      */
-    public static function place(int $userId, ?int $sponsorId, ?string $team = null): void
+    public static function place(int $userId, ?int $sponsorId, ?string $team = null, ?int $atParentId = null): void
     {
         // All placements share one transaction-held lock, including first-root creation.
         DB::one('SELECT id FROM lo_placement_lock WHERE id = 1 FOR UPDATE');
@@ -35,7 +35,8 @@ final class Placement
         if (!$node) throw new HttpError('Tree node missing', 500);
         if ($node['placement_parent_id'] !== null) return; // already placed
 
-        $slot = self::preview($sponsorId, $team, $userId);
+        // An explicit empty position (chosen with "+" on the tree) is re-validated here under the lock.
+        $slot = $atParentId !== null ? self::previewAt((int) $sponsorId, $atParentId, (string) $team) : self::preview($sponsorId, $team, $userId);
         $parentId = $slot['parent_id'] ?? null;
         if ($parentId === null) {
             // Very first node in the whole tree — becomes the root.
@@ -57,6 +58,26 @@ final class Placement
         }
         DB::run('UPDATE lo_tree SET placement_parent_id = ?, placement_side = ? WHERE user_id = ?', [$parentId, $side, $userId]);
         DB::run('UPDATE users SET placement_id = ?, position = ? WHERE id = ?', [$parentId, $side === 'L' ? 'left' : 'right', $userId]);
+    }
+
+    /**
+     * Explicit empty position: $parentId must be the sponsor or inside the sponsor's own
+     * placement subtree, and its $side slot must still be free. Returns the slot or throws.
+     */
+    public static function previewAt(int $sponsorId, int $parentId, string $side): array
+    {
+        if (!in_array($side, ['L', 'R'], true)) throw new HttpError('Choose Left or Right');
+        $parent = DB::one('SELECT user_id, left_child_id, right_child_id FROM lo_tree WHERE user_id = ?', [$parentId]);
+        if (!$parent) throw new HttpError('Placement member not found', 404);
+        $cur = $parentId;
+        for ($i = 0; $cur !== $sponsorId; $i++) {
+            if ($i > 100000) throw new HttpError('Placement leg too deep');
+            $up = DB::val('SELECT placement_parent_id FROM lo_tree WHERE user_id = ?', [$cur]);
+            if ($up === null || $up === false) throw new HttpError('This position is not in your team', 403);
+            $cur = (int) $up;
+        }
+        if ($parent[$side === 'L' ? 'left_child_id' : 'right_child_id'] !== null) throw new HttpError('This position is already filled', 409);
+        return ['parent_id' => $parentId, 'side' => $side];
     }
 
     /** Advisory preview. Registration recomputes this under the placement lock. */
