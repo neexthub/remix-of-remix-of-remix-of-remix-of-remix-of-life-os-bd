@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { memberApi, memberToken } from "@/lib/member-api";
 import { NeelFrame, NEEL_LINKS } from "@/components/neel-frame";
@@ -105,9 +105,9 @@ function Join() {
     {place && <div className="lo-place-note" role="note">New member will join at <b>{place}</b> · {team === "R" ? "Right" : "Left"} side.</div>}
     {done && <div className="success lo-place-done" role="status">
       Registration complete. New Account ID: <b>{done.life_id}</b>. Share this ID and the password with the new member.
-      <div style={{ marginTop: 8 }}><a href="/member/tree">← Back to Binary Tree</a> · <a href={`/join?${new URLSearchParams({ ref: ref ?? "", team: team ?? "L", place: place ?? "" })}`} onClick={() => setDone(null)}>Register another</a></div>
+      <div style={{ marginTop: 8 }}><Link to="/member/tree">← Back to Binary Tree</Link></div>
     </div>}
-    <form onSubmit={submit}>
+    <form onSubmit={submit} hidden={!!done}>
       <table width="100%" border={0} cellSpacing={0} cellPadding={0}><tbody><tr>
         <td width="50%" valign="top">
           <table width="100%" border={0} cellSpacing={5} cellPadding={0}><tbody>
