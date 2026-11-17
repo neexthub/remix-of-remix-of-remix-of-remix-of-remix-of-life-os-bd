@@ -299,7 +299,7 @@ function MemberList() {
       </div>
 
       <Dialog open={!!pwFor} onOpenChange={(o) => { if (!o) setPwFor(null); }}>
-        <DialogContent>
+        <DialogContent className="ml-dialog">
           <form onSubmit={savePassword}>
             <DialogHeader>
               <DialogTitle>Set new password</DialogTitle>

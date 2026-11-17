@@ -120,3 +120,9 @@
 
 /* The admin shell zooms its 1100px canvas to fit small screens; undo that here so the list renders at real size. */
 .ml-root { zoom: var(--admin-unzoom, 1); }
+
+/* Password dialog is portaled outside the admin canvas: give it a solid card and undo the old 100px label width. */
+.ml-dialog { background:#fff; color:#1d2a22; border:1px solid #d9e3dc; border-radius:12px; box-shadow:0 20px 50px rgba(0,0,0,.25); max-width:min(440px, calc(100vw - 24px)); }
+.ml-dialog label { width:auto; margin:0; font-size:13px; font-weight:700; }
+.ml-dialog h2 { font-size:20px; text-align:left; }
+.ml-dialog input { width:100%; height:38px; }
