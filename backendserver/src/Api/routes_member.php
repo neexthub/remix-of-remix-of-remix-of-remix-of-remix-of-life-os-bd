@@ -53,7 +53,8 @@ $router->post('/api/member/register', function () {
 
     $sponsorId = null;
     if (!empty($b['referral_code'])) {
-        $sp = $quick ? lo_find_sponsor((string) $b['referral_code']) : DB::one('SELECT id FROM users WHERE referral_code = ?', [$b['referral_code']]);
+        // Same lookup as the join-page preview, so a typed Account ID works as well as a referral code.
+        $sp = lo_find_sponsor((string) $b['referral_code']);
         if (!$sp) throw new HttpError('Invalid referral code');
         $sponsorId = (int) $sp['id'];
     }

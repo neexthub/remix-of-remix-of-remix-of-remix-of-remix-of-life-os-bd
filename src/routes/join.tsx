@@ -27,6 +27,9 @@ function Join() {
   const { ref, team: linkTeam } = Route.useSearch();
   const navigate = useNavigate();
   const [team, setTeam] = useState<JoinTeam | undefined>(linkTeam);
+  // Without a referral link the visitor types the sponsor code; placement then fills in live.
+  const [typed, setTyped] = useState("");
+  const code = (ref ?? typed).trim();
   const [sponsor, setSponsor] = useState<Sponsor | null>(null);
   const [refErr, setRefErr] = useState("");
   const [err, setErr] = useState("");
@@ -49,12 +52,14 @@ function Join() {
   useEffect(() => {
     let active = true;
     setSponsor(null); setRefErr("");
-    if (!ref) { setRefErr("A sponsor referral link is required. Please request a Left or Right Team link from your sponsor."); return; }
-    memberApi<Sponsor>(`/sponsor?code=${encodeURIComponent(ref)}${team ? `&team=${team}` : ""}`)
-      .then(s => { if (active) setSponsor(s); })
-      .catch(e => { if (active) setRefErr(e.message === "Failed to fetch" ? "Unable to verify this referral link. Please try again when the server is available." : e.message); });
-    return () => { active = false; };
-  }, [ref, team]);
+    if (code.length < 3) return;
+    const t = setTimeout(() => {
+      memberApi<Sponsor>(`/sponsor?code=${encodeURIComponent(code)}${team ? `&team=${team}` : ""}`)
+        .then(s => { if (active) setSponsor(s); })
+        .catch(e => { if (active) setRefErr(e.message === "Failed to fetch" ? "Unable to verify this referral code. Please try again when the server is available." : ref ? e.message : "Sponsor/Referral ID not found."); });
+    }, ref ? 0 : 400);
+    return () => { active = false; clearTimeout(t); };
+  }, [code, team, ref]);
 
   async function pickPhoto(file?: File) {
     setPhoto(null); setPhotoErr("");
@@ -82,7 +87,7 @@ function Join() {
         nid_number: fd.get("nid_number"), blood_group: fd.get("blood_group"), district: fd.get("district"),
         post_code: fd.get("post_code"), address_current: fd.get("address_current"), photo_base64: photo,
         username: uname.username, username_token: uname.username_token, password: fd.get("password"), confirm_password: fd.get("confirm"),
-        referral_code: ref, team, accepted_terms: fd.get("terms") ? 1 : 0,
+        referral_code: code, team, accepted_terms: fd.get("terms") ? 1 : 0,
       } });
       memberToken.set(r.token);
       await navigate({ to: "/member" });
@@ -99,7 +104,7 @@ function Join() {
         <td width="50%" valign="top">
           <table width="100%" border={0} cellSpacing={5} cellPadding={0}><tbody>
             {refErr && <tr><td colSpan={3} className="error" role="alert">{refErr}</td></tr>}
-            {ref && !refErr && !sponsor && <tr><td colSpan={3} role="status">Verifying sponsor and placement…</td></tr>}
+            {code.length >= 3 && !refErr && !sponsor && <tr><td colSpan={3} role="status">Verifying sponsor and placement…</td></tr>}
             {row("Full Name", "name", <input id="name" name="name" type="text" required maxLength={100} autoComplete="name" />, true, true)}
             {row("Cell Number", "phone", <input id="phone" name="phone" type="text" inputMode="tel" required pattern="01[3-9][0-9]{8}" title="01XXXXXXXXX" autoComplete="tel" />, true)}
             {row("Email Address", "email", <input id="email" name="email" type="email" required maxLength={120} autoComplete="email" />, true)}
@@ -109,8 +114,10 @@ function Join() {
             {row("Post Code", "post_code", <input id="post_code" name="post_code" type="text" required maxLength={12} autoComplete="postal-code" />, true)}
             {row("Address", "address_current", <textarea id="address_current" name="address_current" required maxLength={2000} autoComplete="street-address" />, true)}
             {row("Profile Passport Size Photo", "photo", <><input id="photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e => void pickPhoto(e.currentTarget.files?.[0])} />{photo && <img className="lo-photo-preview" src={photo} alt="Selected profile photo" />}{photoErr && <div className="error" role="alert">{photoErr}</div>}</>)}
-            {row("Sponsor/Referral ID", "sponsor", <input id="sponsor" type="text" value={sponsor?.life_id ?? ref ?? ""} readOnly />, true)}
-            {row("Placement UserID", "placement", <input id="placement" type="text" value={sponsor?.placement_life_id ?? ""} readOnly />, true)}
+            {row("Sponsor/Referral ID", "sponsor", ref
+              ? <input id="sponsor" type="text" value={sponsor?.life_id ?? ref} readOnly />
+              : <input id="sponsor" type="text" value={typed} onChange={e => setTyped(e.target.value)} placeholder="Enter sponsor referral code or ID" required maxLength={40} autoComplete="off" />, true)}
+            {row("Placement UserID", "placement", <input id="placement" type="text" value={sponsor?.placement_life_id ?? ""} placeholder={team ? "" : "Choose Left or Right Team"} readOnly aria-readonly="true" tabIndex={-1} style={{ background: "#eee" }} />, true)}
             {row("Choose Option", "team-l", <><input id="team-l" type="radio" name="team" value="L" checked={team === "L"} disabled={!!linkTeam} required onChange={() => setTeam("L")} /> <label htmlFor="team-l" style={{ display: "inline" }}>Left Team</label> <input id="team-r" type="radio" name="team" value="R" style={{ marginLeft: 20 }} checked={team === "R"} disabled={!!linkTeam} required onChange={() => setTeam("R")} /> <label htmlFor="team-r" style={{ display: "inline" }}>Right Team</label></>, true)}
             {row("Account ID (auto)", "username", <>
               <input id="username" type="text" value={uname?.username ?? (unameErr ? "" : "Generating…")} readOnly aria-readonly="true" tabIndex={-1} style={{ background: "#eee", cursor: "not-allowed" }} />

@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { memberApi, memberToken } from "@/lib/member-api";
 import { useEffect, useRef, useState } from "react";
 import { NEEL_LINKS } from "@/components/neel-frame";
-import { QuickRegister } from "@/components/quick-register";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -27,7 +26,6 @@ function Login() {
   const [loadingCaptcha, setLoadingCaptcha] = useState(true);
   const codeInput = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "register">("login");
   const refreshCaptcha = async () => {
     setLoadingCaptcha(true); setCaptcha(null);
     if (codeInput.current) codeInput.current.value = "";
@@ -55,7 +53,7 @@ function Login() {
     <div className="neel-viewport neel-login-page">
       <div className="lo-login-wrap">
         <div className="login_logo" />
-        {mode === "register" ? <QuickRegister onBack={() => { setMode("login"); setErr(null); void refreshCaptcha(); }} /> : <form className="form" onSubmit={submit} autoComplete="off">
+        <form className="form" onSubmit={submit} autoComplete="off">
           <br />
           <table width={240} cellPadding={5} cellSpacing={5}>
             <tbody>
@@ -78,11 +76,11 @@ function Login() {
               </tr>
               <tr><th colSpan={3} role={err ? "alert" : undefined} className="lo-login-error">{err}</th></tr>
               <tr><th align="right" style={{ textAlign: "right" }}><Link to="/contact">Forgot Login Password?</Link></th></tr>
-              <tr><td style={{ textAlign: "center" }}>New member? <button type="button" className="lo-reg-link" onClick={() => setMode("register")}>Register</button></td></tr>
+              <tr><td style={{ textAlign: "center" }}>New member? <Link to="/join" className="lo-reg-link">Register</Link></td></tr>
             </tbody>
           </table>
           <div className="lo-login-footer">CopyRights©{new Date().getFullYear()} By <br />Life OS Limited</div>
-        </form>}
+        </form>
       </div>
     </div>
   );
