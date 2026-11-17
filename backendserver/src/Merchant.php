@@ -60,7 +60,7 @@ final class Merchant
         $password = (string) ($body['password'] ?? '');
         $amount = self::amount($body['amount'] ?? null);
         if ($login === '' || strlen($login) > 80 || $password === '' || strlen($password) > 72) throw new HttpError('life_id and password are required', 422);
-        $dashed = preg_match('/^LID-?(\d{4})-?([A-Z0-9]+)$/i', $login, $m) ? strtoupper("LID-{$m[1]}-{$m[2]}") : $login;
+        $dashed = Username::normalize($login);
         $requestHash = hash('sha256', $dashed . '|' . number_format($amount, 3, '.', ''));
 
         return DB::tx(function () use ($key, $requestId, $login, $dashed, $password, $amount, $requestHash) {

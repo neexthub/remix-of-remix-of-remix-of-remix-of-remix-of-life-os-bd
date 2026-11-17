@@ -1,3 +1,10 @@
+# Member ID format, status and admin member list (2026-11-17)
+- [ ] New registrations: Register Form shows LID-2026-<number>; that exact ID is saved as Account ID, shown everywhere and used for login.
+- [ ] Convert the 1,147 LO######## IDs to LID-2026-######## (same number) everywhere; old LO IDs still accepted at login/sponsor lookup.
+- [ ] Status: activation marks the member active; repair 623 activated members still shown pending.
+- [ ] Admin Member List: server paging with correct SL, advanced filters (status, tree active, rank, side, sponsor, date, search name/ID/phone/email), sort, CSV export, bulk status, summary counts.
+- [ ] Deploy live and test in real browser.
+
 # Old-site full data + daily closing plan (2026-11-14)
 - [x] Instant direct referral; generation (GEN-01..GEN-10) + enrollment/binary matching only at the Dhaka-midnight daily closing; one final matching credit per sale; Total = Rank Matching counts approved matching; Major carry kept, Minor counter reset; system error log. Tests: 143 API + 26 closing + plan simulation.
 - [x] Member dashboard (member/genealogy/matching/commission), separate binary/enrollment matching, GEN levels; admin Daily Closing & Errors and audited Placement Correction pages.

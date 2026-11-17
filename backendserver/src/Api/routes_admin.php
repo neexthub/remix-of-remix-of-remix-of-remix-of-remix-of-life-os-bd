@@ -297,12 +297,91 @@ $router->get('/api/admin/rank-achievers', function () {
         ORDER BY ur.achieved_at DESC LIMIT 500', $p));
 });
 
+// Admin Member List: server-side filters, sorting and paging over every member, with filter-wide counts.
 $router->get('/api/admin/member-list', function () {
     Auth::admin();
-    [$where, $p] = adminFilters('u.created_at');
-    Http::ok(DB::all('SELECT u.id, u.life_id, u.phone, u.email, u.status, u.referred_by, u.created_at, ' . ADMIN_NAME_SQL . ' AS name,
-        t.is_active, t.lifetime_matchings, t.placement_side, (SELECT life_id FROM users s WHERE s.id = t.sponsor_id) AS sponsor_life_id
-        FROM users u LEFT JOIN lo_tree t ON t.user_id = u.id' . $where . ' ORDER BY u.id DESC LIMIT 500', $p));
+    $g = fn(string $k) => trim((string) ($_GET[$k] ?? ''));
+    $w = []; $p = [];
+    foreach (['from' => '>=', 'to' => '<='] as $k => $op) {
+        if ($g($k) === '') continue;
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $g($k))) throw new HttpError("Invalid $k date", 422);
+        $w[] = "u.created_at $op ?"; $p[] = $g($k) . ($op === '>=' ? ' 00:00:00' : ' 23:59:59');
+    }
+    $q = $g('q');
+    if ($q !== '') {
+        if (mb_strlen($q) > 80) throw new HttpError('Search is too long', 422);
+        $like = '%' . addcslashes($q, '%_\\') . '%';
+        $w[] = '(u.life_id = ? OR u.life_id LIKE ? OR u.username LIKE ? OR u.phone LIKE ? OR u.email LIKE ? OR u.referral_code = ?
+                 OR EXISTS (SELECT 1 FROM user_profiles up WHERE up.user_id = u.id AND up.name LIKE ?))';
+        array_push($p, \LifeOS\Username::normalize($q), $like, $like, $like, $like, $q, $like);
+    }
+    if (($st = strtolower($g('status'))) !== '') {
+        if (!in_array($st, ['active', 'pending', 'suspended'], true)) throw new HttpError('Invalid status', 422);
+        $w[] = 'u.status = ?'; $p[] = $st;
+    }
+    if (($ta = $g('tree_active')) !== '') { $w[] = 'COALESCE(t.is_active, 0) = ?'; $p[] = $ta === '1' ? 1 : 0; }
+    if (($side = strtoupper($g('side'))) !== '') {
+        if (!in_array($side, ['L', 'R'], true)) throw new HttpError('Invalid side', 422);
+        $w[] = 't.placement_side = ?'; $p[] = $side;
+    }
+    if (($sp = $g('sponsor')) !== '') {
+        $w[] = 't.sponsor_id = (SELECT s.id FROM users s WHERE s.life_id = ? OR s.username = ? OR s.referral_code = ? ORDER BY s.id LIMIT 1)';
+        array_push($p, \LifeOS\Username::normalize($sp), $sp, $sp);
+    }
+    $rankSql = '(SELECT ur.rank_id FROM lo_user_ranks ur JOIN lo_ranks r ON r.id = ur.rank_id WHERE ur.user_id = u.id ORDER BY r.required_matchings DESC LIMIT 1)';
+    if (($rk = $g('rank')) !== '') {
+        if ($rk === 'none') $w[] = "$rankSql IS NULL";
+        else { $w[] = "$rankSql = ?"; $p[] = (int) $rk; }
+    }
+    if (($fmt = $g('id_format')) === 'old') $w[] = "u.life_id REGEXP '^LID-2026-[0-9A-F]{6}$'";
+    elseif ($fmt === 'new') $w[] = "u.life_id REGEXP '^LID-2026-[0-9]{8}$'";
+    elseif ($fmt === 'other') $w[] = "u.life_id NOT REGEXP '^LID-2026-'";
+    $mm = $g('min_matching');
+    if ($mm !== '') { $w[] = 'COALESCE(t.lifetime_matchings, 0) >= ?'; $p[] = max(0, (int) $mm); }
+    $where = $w ? ' WHERE ' . implode(' AND ', $w) : '';
+    $from = ' FROM users u LEFT JOIN lo_tree t ON t.user_id = u.id';
+
+    $sorts = ['new' => 'u.id DESC', 'old' => 'u.id ASC', 'matching' => 'COALESCE(t.lifetime_matchings,0) DESC, u.id ASC',
+              'life_id' => 'u.life_id ASC', 'directs' => 'directs DESC, u.id ASC'];
+    $order = $sorts[$g('sort')] ?? $sorts['new'];
+    $export = $g('export') === '1';
+    $per = $export ? 20000 : min(500, max(10, (int) ($g('per') ?: 50)));
+    $page = $export ? 1 : max(1, (int) ($g('page') ?: 1));
+    $offset = ($page - 1) * $per;
+
+    $rows = DB::all('SELECT u.id, u.life_id, u.username, u.phone, u.email, u.status, u.created_at, ' . ADMIN_NAME_SQL . ' AS name,
+        COALESCE(t.is_active, 0) AS is_active, COALESCE(t.lifetime_matchings, 0) AS lifetime_matchings, t.placement_side,
+        (SELECT s.life_id FROM users s WHERE s.id = t.sponsor_id) AS sponsor_life_id,
+        (SELECT s.life_id FROM users s WHERE s.id = t.placement_parent_id) AS placement_life_id,
+        (SELECT COUNT(*) FROM lo_tree c WHERE c.sponsor_id = u.id) AS directs,
+        (SELECT r.name FROM lo_ranks r WHERE r.id = ' . $rankSql . ') AS rank_name' . $from . $where .
+        " ORDER BY $order LIMIT $per OFFSET $offset", $p);
+    if ($export) { Http::ok(['rows' => $rows]); return; }
+    $c = DB::one("SELECT COUNT(*) AS total, SUM(u.status = 'active') AS active, SUM(u.status = 'pending') AS pending,
+        SUM(u.status = 'suspended') AS suspended, SUM(COALESCE(t.is_active,0) = 1) AS tree_active" . $from . $where, $p) ?? [];
+    Http::ok(['rows' => $rows, 'page' => $page, 'per' => $per, 'offset' => $offset,
+        'counts' => array_map('intval', $c + ['total' => 0]),
+        'ranks' => DB::all('SELECT id, name FROM lo_ranks ORDER BY required_matchings')]);
+});
+
+// Bulk status change from the Member List (same rules as the single change).
+$router->post('/api/admin/members/bulk-status', function () {
+    $admin = Auth::admin();
+    $b = Http::body();
+    $status = strtolower((string) ($b['status'] ?? ''));
+    if (!in_array($status, ['active', 'suspended', 'pending'], true)) throw new HttpError('Invalid status', 422);
+    $ids = array_values(array_unique(array_filter(array_map('intval', (array) ($b['ids'] ?? [])), fn($i) => $i > 0)));
+    if (!$ids || count($ids) > 500) throw new HttpError('Choose 1–500 members', 422);
+    $n = DB::tx(function () use ($ids, $status, $admin) {
+        $n = 0;
+        foreach ($ids as $id) {
+            if (!DB::one('SELECT id FROM users WHERE id = ? FOR UPDATE', [$id])) continue;
+            $n += DB::run('UPDATE users SET status = ? WHERE id = ? AND status <> ?', [$status, $id, $status]);
+            adminAudit($admin, 'STATUS_' . strtoupper($status), $id);
+        }
+        return $n;
+    });
+    Http::ok(['changed' => $n]);
 });
 
 $router->get('/api/admin/member-report', function () {
@@ -381,7 +460,7 @@ $router->post('/api/admin/balance-add', function () {
     $b = Http::body();
     $amount = (float) ($b['amount'] ?? 0);
     if (!is_finite($amount) || $amount == 0.0 || abs($amount) > 1000000) throw new HttpError('Enter a valid amount', 422);
-    $u = DB::one('SELECT id, life_id FROM users WHERE life_id = ?', [trim((string) ($b['life_id'] ?? ''))]);
+    $u = DB::one('SELECT id, life_id FROM users WHERE life_id = ?', [\LifeOS\Username::normalize((string) ($b['life_id'] ?? ''))]);
     if (!$u) throw new HttpError('Member not found', 404);
     if (($b['wallet'] ?? '') === 'DEPOSIT') {
         $code = 'DEP-' . strtoupper(bin2hex(random_bytes(8)));
@@ -478,7 +557,7 @@ function adminMemberId(string $ref): int
 {
     $ref = trim($ref);
     if ($ref === '' || mb_strlen($ref) > 40) throw new HttpError('Account ID required', 422);
-    $id = DB::val('SELECT id FROM users WHERE life_id = ? OR username = ? ORDER BY id LIMIT 1', [$ref, $ref]);
+    $id = DB::val('SELECT id FROM users WHERE life_id = ? OR username = ? ORDER BY id LIMIT 1', [\LifeOS\Username::normalize($ref), $ref]);
     if ($id === false || $id === null) throw new HttpError("Account $ref not found", 404);
     return (int) $id;
 }
