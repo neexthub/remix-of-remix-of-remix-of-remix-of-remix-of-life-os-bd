@@ -58,15 +58,15 @@ describe("expandable tree with empty positions", () => {
   });
   it("closes opened branches only after the member has moved away from them", () => {
     const l = layoutExpandable(team, 1, 1, new Set([2]), false);
-    const parentOf = new Map([[2, 1], [3, 1], [4, 2]]);
-    const m = l.byId.get(4)!;
-    const onIt = { x: 400 - m.x, y: 300 - m.y, k: 1 };
-    expect(staleOpen(l, new Set([2]), parentOf, onIt, 800, 600)).toEqual([]);
-    const far = { x: 400 - m.x, y: -5000, k: 1 };
-    expect(staleOpen(l, new Set([2]), parentOf, far, 800, 600)).toEqual([]);
-    const away = { x: -m.x - 2000 + 400, y: 300 - m.y, k: 1 };
-    const l2 = { ...l, nodes: [...l.nodes, { ...l.byId.get(3)!, x: m.x + 2400 }] };
-    expect(staleOpen(l2, new Set([2]), parentOf, away, 800, 600)).toEqual([2]);
+    const parentOf = new Map([[2, 1], [3, 2], [9, 1]]);
+    const m = l.byId.get(3)!;
+    expect(staleOpen(l, new Set([2]), parentOf, { x: 400 - m.x, y: 300 - m.y, k: 1 }, 800, 600)).toEqual([]);
+    // Nothing near the screen at all (e.g. while gliding): close nothing.
+    expect(staleOpen(l, new Set([2]), parentOf, { x: 0, y: -50000, k: 1 }, 800, 600)).toEqual([]);
+    // Moved far to another branch (member 9): branch 2 is closed, the path to 9 stays.
+    const far = { ...l.byId.get(1)!, row: [9, "FAR", "Far", 1, null, null] as TreeRow, x: m.x + 5000 };
+    const l2 = { ...l, nodes: [...l.nodes, far] };
+    expect(staleOpen(l2, new Set([2, 9]), parentOf, { x: 400 - far.x, y: 300 - far.y, k: 1 }, 800, 600)).toEqual([2]);
   });
   it("the + link opens the Register Form at that exact position", () => {
     expect(placeJoinPath("LID-2026-937CCC", { parentId: 9, parentLifeId: "LID-2026-AAA", side: "R" })).toBe("/join?ref=LID-2026-937CCC&team=R&place=LID-2026-AAA");
