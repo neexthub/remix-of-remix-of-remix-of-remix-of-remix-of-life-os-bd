@@ -1,0 +1,239 @@
+=====================================================================
+ LIFE OS BD — সম্পূর্ণ প্রজেক্ট নোট (projectnot.txt)
+ শেষ আপডেট: ১৭ নভেম্বর ২০২৬ (Dhaka)
+ এই ফাইলে আছে: প্রজেক্টের পরিচয়, মার্কেটিং প্ল্যান, পুরো কাজের ধারা,
+ সার্ভার/ডাটাবেস, লগইন তথ্য কোথায় আছে, আপনার সব সিদ্ধান্ত (chat memory),
+ এ পর্যন্ত করা সব কাজ, বাকি কাজ এবং data/backup ফাইলের তালিকা।
+=====================================================================
+
+
+---------------------------------------------------------------------
+১. প্রজেক্ট কী
+---------------------------------------------------------------------
+Life OS BD একটি MLM / network marketing সফটওয়্যার।
+- সামনের ওয়েবসাইট + Member Panel + Admin Panel: React (TanStack Start), ফোল্ডার src/
+- টাকা/কমিশন/ট্রি-র সব হিসাব: PHP + MySQL সার্ভার, ফোল্ডার backendserver/
+- নতুন হোস্টে বসানোর installer: setup/ (পুরোনো সাইটের পুরো data সহ)
+- live আপডেট ও পুরোনো data আনার স্ক্রিপ্ট: scripts/
+- মূল উৎস: GitHub neextwork7-cmd/commission-compass-club থেকে clone করা।
+
+লিংক
+- Live সাইট:            https://lifeosbd.com
+- Live API:             https://lifeosbd.com/backendserver/api
+- Admin login:          https://lifeosbd.com/admin/login
+- Member login:         https://lifeosbd.com/login   (Register: /join)
+- Preview/dev API:      https://server.nexarofx.com/lifeos/backendserver
+- Lovable preview:      https://id-preview--f5d73262-dc38-4082-a71a-833b9810074b.lovable.app
+- cPanel:               https://bdix2.parknil.com:2083/  (username: lifeosbd)
+
+
+---------------------------------------------------------------------
+২. লগইন ও গোপন তথ্য (credentials) — কোথায় আছে
+---------------------------------------------------------------------
+- Live Admin: username "Admin" (email দিয়েও হয়), password 1111111111
+  (আপনার নির্দেশে রাখা। এটা দুর্বল password — পরে বদলানোর পরামর্শ।)
+- cPanel: URL ও username উপরে আছে। cPanel password ইচ্ছা করে এই ফাইলে
+  লেখা হয়নি — GitHub-এ থাকলে কেউ পুরো সার্ভার ও ৭২ হাজার সদস্যের টাকার
+  ডাটাবেস দখল করতে পারে। password আপনার কাছেই রাখুন; chat-এ দেওয়া হয়েছিল
+  বলে cPanel থেকে একবার বদলে নেওয়া নিরাপদ।
+- DB host/name/user/password, app secret, master key: backendserver/.env
+  (এটা config.php-কে override করে; খালি মান উপেক্ষা হয়)
+- Master API key (signed live update): master-keys.json এবং root .env
+  (LIFEOS_MASTER_KEY)
+- Frontend-এর API ঠিকানা: root .env (VITE_LIFEOS_API_URL)
+- Cron সুইচ (গোপন নয়): backendserver/runtime.php
+- Merchant Cashback API key: ডাটাবেসে hash করে রাখা; Admin → Cashback API
+  পাতা থেকে নতুন key বানানো যায় (একবারই দেখায়)।
+- পুরোনো সাইট / ROOT member password কোডে নেই; ROOT তৈরি হয়
+  signed /api/master/root/ensure দিয়ে।
+
+Live ডাটাবেস (cPanel MySQL)
+- lifeosbd_v3       = এখন LIVE (পুরোনো সাইটের সব data + নতুন প্ল্যান)
+- lifeosbd_restore  = rollback কপি (১২-১৪ নভেম্বরের অবস্থা)
+- lifeosbd_new      = পুরোনো সাইটের আসল ডাটাবেস (হাত দেওয়া হয় না)
+- lifeosbd_neexthub = আরও পুরোনো rollback
+
+
+---------------------------------------------------------------------
+৩. মার্কেটিং প্ল্যান (কোডে স্থির — backendserver/src/Engine/Plan.php)
+---------------------------------------------------------------------
+প্যাকেজ / Activation: ৳১,০০০ = 1000 BV। ভাগ:
+- Cashback ৳১০০ — শুধু সার্ভিসে খরচ, তোলা যায় না
+- Direct Referral ৳২০০ — সরাসরি sponsor, activation-এর সাথে সাথে
+- Matching Reserve ৳৩০০ — এক sale থেকে সর্বোচ্চ ১১টি matching:
+  150, 75, 37.5, 18.75, 9.375 ... (প্রতিবার অর্ধেক), মোট সর্বোচ্চ ৳২৯৯.৮৫৪
+- Generation Pool ৳২০০ — ১০ লেভেল GEN-01..GEN-10:
+  50 / 30 / 25 / 20 / 18 / 15 / 12 / 10 / 10 / 10
+- Rank Pool ৳২০০
+
+Matching
+- Daily Matching Cap: প্রতি active ID দিনে ৳৫,০০০
+- Binary (placement) tree আর Enrollment (sponsor) tree আলাদা।
+  দুটোর হিসাব আলাদা হয়, কিন্তু Central Matching Selection Engine একটাই
+  Final Matching দেয় — এক sale = সর্বোচ্চ একটি final matching credit।
+  Double matching/double commission নয়।
+- Total Matching = Rank Matching = cap ও selection-এর পরে অনুমোদিত matching।
+- Major Link: অব্যবহৃত carry সবসময় পরের দিনে যায়।
+- Minor Link: daily cap অনুযায়ী, রাত ১২টার পর counter শূন্য দেখায়।
+- একবার ব্যবহৃত volume আর কখনও ব্যবহার হয় না; প্রতিটি volume-এর উৎস sale
+  lo_volumes / lo_volume_pairs-এ লেখা থাকে (audit-এর জন্য)।
+
+Rank (lo_ranks — matching সংখ্যা অনুযায়ী)
+  Member 0 · Silver Executive 100 · Gold Executive 300 · Gold/Executive 1,000 ·
+  Platinum Executive 5,000 · Diamond Executive 25,000 · Crown Executive 125,000 ·
+  Ambassador 500,000 · Global Ambassador 1,500,000
+  (নতুন rank নাম রাখার সিদ্ধান্ত। rank reward-এর টাকা admin হাতে দেন —
+   নির্দিষ্ট অঙ্ক এখনও ঠিক হয়নি।)
+
+Wallet
+- D Wallet = Deposit wallet (Active New ID-তে খরচ হয়)
+- E Wallet = Earning/Withdraw wallet (তোলা যায়)
+- Cashback wallet = পুরোনো ব্যালেন্স + ৳১০০ cashback (service-only)
+- E → D swap চার্জ ৪% (transaction password লাগে)
+- Withdrawal চার্জ ১০%
+- নতুন টাকার ফিচার (transfer, recharge) admin চালু না করা পর্যন্ত বন্ধ।
+- Admin feature switch ও withdrawal limit PHP সার্ভারে যাচাই হয় (PanelPolicy)।
+
+
+---------------------------------------------------------------------
+৪. কাজের ধারা (workflow)
+---------------------------------------------------------------------
+Registration (/join)
+1. Sponsor referral link বা sponsor code / Account ID / username দিয়ে।
+2. Left / Right দল বেছে নেওয়া; placement সার্ভার নিজে খুঁজে বসায়
+   (ফর্মে placement দেখায় না, browser-এর দেওয়া placement বিশ্বাস করা হয় না)।
+3. নতুন Account ID = ৬ সংখ্যার নম্বর (যেমন 806246)। এই ID-ই username,
+   life_id, membership_no। পুরোনো LID-2026-... ও পুরোনো hex ID অপরিবর্তিত।
+4. Register শেষে popup-এ Account ID + password; ছবি হিসেবে save করা যায়।
+5. Blood group, NID, District, Post code, Address পরে Profile Edit-এ।
+6. Binary tree-র খালি জায়গার "+" চাপলে সেই জায়গায় Register ফর্ম খোলে।
+
+Login (/login): Account ID/username + password + captcha (৪ সংখ্যা, সার্ভারে
+তৈরি ও একবার ব্যবহার)। Cancel বোতাম নেই, Register লিংক আছে।
+
+Activation
+- Payment SUCCESS হলেই activation; Pending/Failed/Reversed হলে নয়।
+- একই Transaction ID দিয়ে দুবার activation/কমিশন নয়।
+- Active New ID: D Wallet থেকে ৳১,০০০ কেটে সাথে সাথে active (pending নয়)।
+- Direct Referral তখনই; Matching + Generation + বাকি সব রাত ১২টায়।
+- কমিশন না হলে System Error Log-এ লেখা হয়।
+
+Daily Closing (প্রতিদিন বাংলাদেশ সময় রাত ১২টা)
+ data freeze → eligible activation যাচাই → enrollment+binary matching →
+ daily cap → final matching selection → generation → Major carry update →
+ Minor counter reset → commission ledger → member dashboard update।
+ আজকের তারিখ সবসময় MySQL CURRENT_DATE() থেকে।
+
+Cron (cPanel → Cron Jobs → Once Per Minute)
+  /usr/local/bin/php '/home/lifeosbd/public_html/backendserver/bin/cron-http.php'
+  (পথ আপনার cPanel অনুযায়ী মিলিয়ে নিন। Admin → Configs → Cron Setup পাতায়
+   ঠিক কমান্ড copy করা যায়।) URL: <domain>/backendserver/api/public/cron/settle
+  — শুধু HMAC-signed POST গ্রহণ করে, URL-এ key থাকে না।
+  টাকা দিতে দুটো অনুমতি লাগে: runtime.php-তে cron_http_execute=true এবং
+  admin setting financial_release_approved=1। midnight payout এখন চালু।
+
+Placement সংশোধন: শুধু Admin → Placement Correction, audit log সহ।
+
+
+---------------------------------------------------------------------
+৫. পাতাগুলো
+---------------------------------------------------------------------
+Member: Dashboard, Activation (Active New ID), Binary Tree, Enrollment,
+Sponsors, Statistics, Matching (Binary / Placement), Commission, Transaction,
+Wallet Swap, Withdrawals, Recharge, Reports (transaction/receive/withdraw/
+recharge), Profile, Change Password, Transaction PIN, Notice।
+Admin: Dashboard, Member List, Member Report, Joining Report, Activations,
+Balance Add, Ledger, Matching Events, Daily Closing & Errors, Statements,
+Placement Correction, Rank Achievers, Rank Reward, Withdrawals, Transfers,
+Recharges, Sales Report, Plan, Cashback API, Cron Setup, Test Lab, Notice,
+Scroll News, Site Config, Password।
+সাধারণ ওয়েবসাইট: Home, About, Founder, Products, Gallery, News/Events, FAQ,
+Contact, Join Us ইত্যাদি।
+
+
+---------------------------------------------------------------------
+৬. আপনার সিদ্ধান্তগুলো (chat memory)
+---------------------------------------------------------------------
+- আমার সাথে বাংলায়, সহজ ভাষায় কথা।
+- পুরোনো সাইটের সব সদস্য, tree, sponsor, rank, history নতুন সাইটে।
+- পুরোনো wallet/cashback/service/loan ব্যালেন্স হুবহু রাখা।
+- ১২ নভেম্বরের পরে নতুন সাইটে খোলা ১২১টি অ্যাকাউন্ট rebuild-এ বাদ।
+- পুরোনো carry = Major Link carry।
+- Direct referral সাথে সাথে; matching + generation রাত ১২টায়।
+- Binary আর Enrollment matching আলাদা দেখাবে।
+- Enrollment tree শুধু নিজের সরাসরি sponsor করা সদস্য।
+- পুরোনো hex ID (অক্ষরযুক্ত) যেমন আছে থাকবে।
+- নতুন Account ID ৬ সংখ্যা; ফর্মে * চিহ্ন নেই; placement লুকানো।
+- Live admin password 1111111111; নতুন rank নাম।
+- পুরোনো activation-গুলো নতুন প্ল্যানে আবার কমিশন পাবে, পুরোনো ব্যালেন্স
+  cashback-এ থাকবে, পুরোনো+নতুন statement একসাথে, বাকি rank reward দেবে।
+  (এই "পুরোনো activation replay" এখনও করা হয়নি — নিচে বাকি কাজ দেখুন।)
+- Test Lab live-এ বন্ধ রাখতে হবে (Reset চাপলে ROOT ছাড়া সব মুছে যায়)।
+
+
+---------------------------------------------------------------------
+৭. এ পর্যন্ত করা কাজ (সংক্ষেপে, তারিখ অনুযায়ী)
+---------------------------------------------------------------------
+০৯ নভেম্বর: D/E wallet, ৪% swap, ১০% withdraw চার্জ; cPanel প্যাকেজ; cron গাইড;
+  Merchant Cashback API; /setup installer; demo admin বাদ।
+১২ নভেম্বর: পুরোনো data দিয়ে live reset; ৭২,৮২৪ সদস্য মিলানো; zoomable
+  binary tree; sponsor নাম ঠিক; Left/Right পয়েন্ট ফেরত; ফোনে tree cache ঠিক।
+১৪ নভেম্বর: lifeosbd_v3 তৈরি ও live; ১৪/১৪ যাচাই; daily closing ইঞ্জিন;
+  GEN-01..10; Major/Minor link; dashboard; Placement Correction; error log।
+১৭ নভেম্বর: Register/Login নতুন ডিজাইন; ৬ সংখ্যার ID; save-info popup ছবি
+  সহ; ID/status ঠিক (৬২৩ সদস্য); Admin Member List নতুন; binary tree
+  স্ক্রল-অনুযায়ী নিজে তৈরি হয়, + দিয়ে register; matching রিপোর্ট দুই ID-র।
+বিস্তারিত: roadmap.md। কারিগরি নিয়ম: AGENTS.md ও backendserver/AGENTS.md।
+পুরোনো প্ল্যান অডিট: backendserver/MARKETING_PLAN_AUDIT.md।
+
+
+---------------------------------------------------------------------
+৮. বাকি কাজ
+---------------------------------------------------------------------
+1. পুরোনো ৫২,৩৫৪ activation নতুন প্ল্যানে replay (আগে আলাদা কপিতে চালিয়ে
+   মোট টাকা দেখাতে হবে — সর্বোচ্চ প্রায় ৳৩.৬ কোটি হতে পারে)।
+2. প্রতিটি rank-এর reward কত টাকা — আপনার কাছ থেকে জানা দরকার।
+3. পুরোনো activation-এর ৳১০০ cashback আবার দেওয়া হবে না (ধরে নেওয়া) —
+   নিশ্চিত করুন।
+4. Member dashboard/Transaction/Commission পাতায় পুরোনো statement মিলিয়ে দেখানো।
+
+
+---------------------------------------------------------------------
+৯. Data ও backup ফাইল
+---------------------------------------------------------------------
+GitHub-এ (এই প্রজেক্টে) আছে:
+- backendserver/database/001..013_*.sql — পুরো ডাটাবেস গঠন (migrations)
+- setup/legacy-data.sql.gz.part1..3 — installer-এর পুরোনো সাইটের data
+- data-backups/LifeOS-Full-Schema-v2.sql — পূর্ণ schema
+- data-backups/lifeos-live-database-2026-10-07.sql — পুরোনো live schema
+- data-backups/LifeOS-Legacy-Data-Matching-Restored-v3.sql.gz.part0..2 —
+  সর্বশেষ পুরোনো-data (matching সহ)। জোড়া লাগাতে:
+    cat LifeOS-Legacy-Data-Matching-Restored-v3.sql.gz.part* > LifeOS-Legacy-Data-Matching-Restored-v3.sql.gz
+  মিলিয়ে দেখুন: data-backups/CHECKSUMS.md5
+- backendserver/tests/fixtures — ৩০০ সদস্যের plan simulation data
+- .env, backendserver/.env, backendserver/config.php, runtime.php, master-keys.json
+
+GitHub-এ পাঠানো যায় না (শুধু Lovable Files-এ আছে, সেখান থেকে download করুন):
+- LifeOS-Old-Site-Backup-Verified-2026-11-12.sql.gz (১.২৭ GB — GitHub-এর
+  ১০০ MB সীমার অনেক বেশি)
+- LifeOS-Live-Backup-Before-Reset-2026-11-12.sql.gz (৫০ MB) ও
+  LifeOS-Live-Backup-Verified-2026-11-12-v2.sql.gz (৫২ MB) — পুরোনো snapshot
+- সব ZIP (cPanel v4/v5/v6, Complete Source v2/v3) — এগুলো এই প্রজেক্টেরই কপি
+সবচেয়ে নিরাপদ backup: cPanel → phpMyAdmin → lifeosbd_v3 → Export।
+
+GitHub-এ ইচ্ছা করে যায় না (প্রতিবার নিজে তৈরি হয়): node_modules, dist,
+.oj-cache, tsconfig.tsbuildinfo, log ফাইল। `bun install` করলে আবার আসে।
+
+
+---------------------------------------------------------------------
+১০. চালানো ও deploy
+---------------------------------------------------------------------
+- Frontend: bun install → bun run dev
+- cPanel প্যাকেজ: node scripts/build-cpanel.mjs, python3 scripts/package-cpanel.py
+- Backend live আপডেট: python3 scripts/master-update.py (root .env-এর
+  LIFEOS_MASTER_KEY লাগে; --check দিয়ে শুধু সংযোগ পরীক্ষা)
+- Backend test: php -S 127.0.0.1:8090 -t backendserver backendserver/index.php
+  তারপর php backendserver/tests/run_tests.php (নতুন local DB-তে)
+- Plan simulation: backendserver/tests/plan_simulation.php (শুধু local DB)
+- পুরোনো data আনা: scripts/legacy-import (rebuild_v3.py, verify_v3.py)
+=====================================================================
