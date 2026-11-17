@@ -51,4 +51,3 @@
 - Active New ID uses an append-only deposit ledger and one transaction for the fixed package payment and activation; legacy transfer writes return Gone so cashback cannot fund this replacement flow.
 - Old-site members are imported by scripts/legacy-import (build locally, dump for phpMyAdmin, push live in sub-1MB signed chunks); imported activations are stored already processed, so the engine never pays commission for pre-import sales.
 - Keep runtime test_lab_enabled false while real members exist, because Test Lab Reset deletes every account except ROOT.
-- projectnot.txt is the human handover note (plan, workflow, decisions, data inventory); it references where secrets live instead of copying secret values, and large backups are split into <10MB parts under data-backups/ with checksums.
