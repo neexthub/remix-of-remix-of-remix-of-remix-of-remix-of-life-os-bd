@@ -116,9 +116,7 @@ function Dashboard() {
                 <p>
                   <span>Share my direct register affiliate link for my team Affiliations</span>
                   <br /><br />
-                  <JoinLink code={me.referral_code} team="L" />
-                  <br />
-                  <JoinLink code={me.referral_code} team="R" />
+                  <JoinLink code={me.referral_code} />
                 </p>
               </div>
             </td>
@@ -139,20 +137,35 @@ function Dashboard() {
   );
 }
 
-function JoinLink({ code, team }: { code: string; team: JoinTeam }) {
+function JoinLink({ code }: { code: string }) {
+  const [team, setTeam] = useState<JoinTeam>("L");
   const [status, setStatus] = useState("");
   const [url, setUrl] = useState("");
-  useEffect(() => { setUrl(referralJoinUrl(window.location.origin, code, team)); }, [code, team]);
+  useEffect(() => { setUrl(referralJoinUrl(window.location.origin, code, team)); setStatus(""); }, [code, team]);
   async function copy() {
     try { await navigator.clipboard.writeText(url); setStatus("Copied"); }
     catch { setStatus("Copy unavailable — select the link above."); }
   }
   return (
-    <>
+    <span className="lo-joinlink">
+      <span role="radiogroup" aria-label="Team" style={{ display: "inline-flex", gap: 8, marginBottom: 8 }}>
+        {(["L", "R"] as JoinTeam[]).map((t) => (
+          <button key={t} type="button" role="radio" aria-checked={team === t} onClick={() => setTeam(t)}
+            style={{ padding: "4px 18px", fontWeight: 700, opacity: team === t ? 1 : 0.55, outline: team === t ? "2px solid currentColor" : "none" }}>
+            {t === "L" ? "LEFT" : "RIGHT"}
+          </button>
+        ))}
+      </span>
+      <br />
       <small>{team === "L" ? "LEFT TEAM" : "RIGHT TEAM"}</small>
       <a target="_blank" rel="noreferrer" href={url || undefined}>{url}</a>
       <button type="button" onClick={copy} disabled={!url}>Copy</button>
+      <br />
+      <a href={url || undefined} target="_blank" rel="noreferrer"
+        style={{ display: "inline-block", marginTop: 8, padding: "6px 22px", fontWeight: 700, border: "2px solid currentColor", textDecoration: "none" }}>
+        Join Now ({team === "L" ? "Left" : "Right"})
+      </a>
       {status && <small role="status">{status}</small>}
-    </>
+    </span>
   );
 }
