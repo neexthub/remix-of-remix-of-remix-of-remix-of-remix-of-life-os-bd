@@ -94,8 +94,9 @@ function Dashboard() {
               <br />
               <div className="div_block lo-status">
                 <h2>ID STATUS</h2>
-                <h4 className={w?.id_active ? undefined : "lo-inactive"} style={{ textAlign: "center" }}>{w ? (w.id_active ? "Activated" : "Not Active") : "…"}</h4>
-                <p className="lo-rank">Rank: <b>{rank ? (rank.current?.name ?? "No Rank Yet") : "…"}</b></p>
+                <h4 className={w?.id_active ? undefined : "lo-inactive"} style={{ textAlign: "center" }}>
+                  {!w || !rank ? "…" : !w.id_active ? "Inactive" : (rank.current?.name ?? "Active")}
+                </h4>
               </div>
               <div className="lo-wallets">
                 {([
